@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# GIAO DIỆN CSS: MÀU SẮC TAB CỐ ĐỊNH, NHẸ NHÀNG & KHUNG CHAT
+# GIAO DIỆN CSS: TÔ MÀU SẴN + HIỆU ỨNG 3D NỔI BẬT CHO 2 TAB
 # ==========================================
 st.markdown("""
     <style>
@@ -20,34 +20,61 @@ st.markdown("""
         color: #e2e8f0;
     }
     
-    /* Tô màu cố định sẵn cho 2 Tab nhánh chính */
-    /* Tab Nhánh 1: Xanh lá nhạt */
-    div.stTabs [data-baseweb="tab-list"] button:nth-child(1) {
-        background-color: #dcfce7 !important;
-        color: #166534 !important;
-        font-weight: bold;
-        border-radius: 8px 8px 0px 0px;
-        border: 1px solid #bbf7d0;
-    }
-    /* Tab Nhánh 2: Xanh dương hơi nhạt */
-    div.stTabs [data-baseweb="tab-list"] button:nth-child(2) {
-        background-color: #e0f2fe !important;
-        color: #0369a1 !important;
-        font-weight: bold;
-        border-radius: 8px 8px 0px 0px;
-        border: 1px solid #bae6fd;
-    }
-    
-    /* Hiệu ứng khi được chọn active */
-    div.stTabs [data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(1) {
-        background-color: #22c55e !important;
-        color: #ffffff !important;
-    }
-    div.stTabs [data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(2) {
-        background-color: #0284c7 !important;
-        color: #ffffff !important;
+    /* Cấu hình tổng thể cho các Tab chính */
+    div[data-baseweb="tab-list"] {
+        gap: 12px !important;
+        padding: 5px 0px !important;
     }
 
+    /* Target trực tiếp nút Tab 1 (Nhánh 1) - Xanh lá nhạt + Hiệu ứng 3D */
+    div[data-baseweb="tab-list"] button:nth-child(1) {
+        background: linear-gradient(145deg, #dcfce7, #bbf7d0) !important;
+        color: #14532d !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        border-radius: 10px 10px 0px 0px !important;
+        border: 2px solid #86efac !important;
+        box-shadow: 0px 6px 10px rgba(34, 197, 94, 0.25), inset 0px 1px 0px rgba(255, 255, 255, 0.8) !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    /* Target trực tiếp nút Tab 2 (Nhánh 2) - Xanh dương nhạt + Hiệu ứng 3D */
+    div[data-baseweb="tab-list"] button:nth-child(2) {
+        background: linear-gradient(145deg, #e0f2fe, #bae6fd) !important;
+        color: #0c4a6e !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        border-radius: 10px 10px 0px 0px !important;
+        border: 2px solid #7dd3fc !important;
+        box-shadow: 0px 6px 10px rgba(2, 132, 199, 0.25), inset 0px 1px 0px rgba(255, 255, 255, 0.8) !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    /* Khi di chuột (Hover) tạo hiệu ứng nhô cao 3D */
+    div[data-baseweb="tab-list"] button:nth-child(1):hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0px 8px 15px rgba(34, 197, 94, 0.4) !important;
+    }
+    div[data-baseweb="tab-list"] button:nth-child(2):hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0px 8px 15px rgba(2, 132, 199, 0.4) !important;
+    }
+
+    /* Trang thái Active khi được bấm chọn */
+    div[data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(1) {
+        background: linear-gradient(145deg, #16a34a, #15803d) !important;
+        color: #ffffff !important;
+        border-color: #22c55e !important;
+        box-shadow: 0px 8px 15px rgba(22, 163, 74, 0.5) !important;
+    }
+    div[data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(2) {
+        background: linear-gradient(145deg, #0284c7, #0369a1) !important;
+        color: #ffffff !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0px 8px 15px rgba(2, 132, 199, 0.5) !important;
+    }
+
+    /* Khung chat thảo luận */
     .chat-box {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -64,7 +91,7 @@ st.markdown("""
 USER_CREDENTIALS = {
     "vuongtbichtuyen@gmail.com": "123456",
     "230110quynhanh@gmail.com": "123456",
-    "phamtvien@gmail.com": "123456",  # Thêm tài khoản theo yêu cầu
+    "phamtvien@gmail.com": "123456",
 }
 
 if "discussions" not in st.session_state:
@@ -145,13 +172,13 @@ st.markdown("---")
 st.markdown("## ⚡ MPM20 - Dashboard Quản Trị Dự Án Chuyên Sâu")
 
 # ==========================================
-# HÀM HỖ TRỢ UPLOAD VÀ QUẢN LÝ TÀI LIỆU (ĐÃ LOẠI BỎ DOWNLOAD MẪU)
+# HÀM HỖ TRỢ UPLOAD & ĐỌC / MỞ TÀI LIỆU CỤ THỂ
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
     st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
     
     st.markdown("##### 📤 Upload tài liệu lên hệ thống")
-    uploaded_file = st.file_uploader(f"Chọn file cho {tab_name}:", key=f"up_{tab_key}")
+    uploaded_file = st.file_uploader(f"Chọn file từ máy tính cho {tab_name}:", key=f"up_{tab_key}")
     if uploaded_file is not None:
         file_bytes = uploaded_file.getvalue()
         file_info = {
@@ -170,7 +197,7 @@ def render_upload_download_section(tab_key, tab_name):
             st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
 
     st.markdown("---")
-    st.markdown("##### 📚 Danh sách tài liệu đã lưu & Tùy chọn (Tải về / Đọc trực tiếp):")
+    st.markdown("##### 📚 Danh sách tài liệu đã lưu & Tùy chọn đọc/mở:")
     
     if tab_key in st.session_state.uploaded_files_store and st.session_state.uploaded_files_store[tab_key]:
         for idx, f in enumerate(st.session_state.uploaded_files_store[tab_key]):
@@ -178,18 +205,19 @@ def render_upload_download_section(tab_key, tab_name):
             with f_col1:
                 st.markdown(f"📄 **{f['name']}** `({f['size']} KB)`<br><span style='font-size:0.8rem; color:gray;'>Tải bởi: {f['user']} [{f['time']}]</span>", unsafe_allow_html=True)
             with f_col2:
+                # Nút tải xuống để mở trực tiếp bằng phần mềm mặc định trên máy (Excel, Word, Adobe...)
                 st.download_button(
-                    label="📥 Tải về",
+                    label="💻 Tải về & Mở bằng App máy",
                     data=f['data'],
                     file_name=f['name'],
                     key=f"dl_file_{tab_key}_{idx}"
                 )
             with f_col3:
-                if st.button("📖 Đọc", key=f"read_file_{tab_key}_{idx}"):
+                if st.button("📖 Xem nhanh trên Web", key=f"read_file_{tab_key}_{idx}"):
                     st.session_state[f"view_{tab_key}_{idx}"] = not st.session_state.get(f"view_{tab_key}_{idx}", False)
 
             if st.session_state.get(f"view_{tab_key}_{idx}", False):
-                with st.expander(f"🔎 Xem trước nội dung: {f['name']}", expanded=True):
+                with st.expander(f"🔎 Xem nội dung trực tuyến: {f['name']}", expanded=True):
                     try:
                         if "text" in f['type'] or f['name'].endswith(('.txt', '.py', '.csv', '.md', '.json')):
                             st.text(f['data'].decode("utf-8", errors="ignore"))
@@ -199,15 +227,15 @@ def render_upload_download_section(tab_key, tab_name):
                         elif "image" in f['type']:
                             st.image(f['data'], caption=f['name'])
                         else:
-                            st.info("Trình duyệt hỗ trợ xem trực tiếp với định dạng Văn bản, Excel, Hình ảnh và CSV. Bạn có thể nhấn 'Tải về' để xem.")
+                            st.info("💡 Để xem và chỉnh sửa file này bằng phần mềm chuyên dụng (Excel, Word, AutoCAD, Powerpoint...) trên máy tính của bạn, vui lòng bấm nút **'💻 Tải về & Mở bằng App máy'** sát bên cạnh.")
                     except Exception as e:
-                        st.error(f"Không thể đọc trực tiếp file này: {e}")
+                        st.error(f"Không thể đọc trực tiếp file này trên web: {e}")
             st.markdown("---")
     else:
         st.write("_Chưa có tài liệu nào được tải lên._")
 
 # ==========================================
-# ĐIỀU HƯỚNG NHÁNH CHÍNH (TÔ MÀU SẴN)
+# ĐIỀU HƯỚNG NHÁNH CHÍNH (ĐÃ TÔ MÀU 3D ĐẶC BIỆT)
 # ==========================================
 main_tab1, main_tab2 = st.tabs([
     "📌 Nhánh 1: MPM (Quản trị & Tri thức)", 
