@@ -19,7 +19,6 @@ st.markdown("""
         background-color: #0e1117;
         color: #e2e8f0;
     }
-    /* Tùy chỉnh màu sắc các Tab nhẹ nhàng, không chói */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
     }
@@ -42,7 +41,6 @@ st.markdown("""
         color: #ffffff !important;
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
-    /* Khung chat thảo luận gom gọn */
     .chat-box {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -61,18 +59,20 @@ USER_CREDENTIALS = {
     "230110quynhanh@gmail.com": "123456",
 }
 
-# Khởi tạo Session State cho lịch sử chat và kho lưu trữ file cho TẤT CẢ các tab
 if "discussions" not in st.session_state:
     st.session_state.discussions = []
 
 if "call_status" not in st.session_state:
     st.session_state.call_status = False
 
+# Khởi tạo đầy đủ tất cả các khóa cho toàn bộ tab để tránh lỗi KeyError
 if "uploaded_files_store" not in st.session_state:
-    st.session_state.uploaded_files_store = {
-        "doc": [], "exams": [], "disc": [], "insight": [],
-        "appcode": [], "example": [], "pm": [], "qs": []
-    }
+    st.session_state.uploaded_files_store = {}
+
+# Đảm bảo mọi tab đều có kho lưu trữ riêng
+for tab_k in ["doc", "exams", "disc", "insight", "appcode", "example", "pm", "qs"]:
+    if tab_k not in st.session_state.uploaded_files_store:
+        st.session_state.uploaded_files_store[tab_k] = []
 
 if "active_users" not in st.session_state:
     st.session_state.active_users = set()
@@ -122,7 +122,6 @@ if not st.session_state.logged_in:
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
 
-# Header hiển thị thông tin & Thống kê
 hcol1, hcol2, hcol3 = st.columns([3, 3, 2])
 with hcol1:
     st.markdown(f"👤 **Thành viên:** `{user_email}`")
@@ -151,12 +150,14 @@ def render_upload_download_section(tab_key, tab_name):
         uploaded_file = st.file_uploader(f"Chọn file cho {tab_name}:", key=f"up_{tab_key}")
         if uploaded_file is not None:
             file_info = {"name": uploaded_file.name, "size": round(uploaded_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            if tab_key not in st.session_state.uploaded_files_store:
+                st.session_state.uploaded_files_store[tab_key] = []
             if file_info not in st.session_state.uploaded_files_store[tab_key]:
                 st.session_state.uploaded_files_store[tab_key].append(file_info)
             st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
 
         st.markdown("##### 📚 Danh sách file đã lưu:")
-        if st.session_state.uploaded_files_store[tab_key]:
+        if tab_key in st.session_state.uploaded_files_store and st.session_state.uploaded_files_store[tab_key]:
             for f in st.session_state.uploaded_files_store[tab_key]:
                 st.info(f"📄 **{f['name']}** ({f['size']} KB) - *{f['user']}* [{f['time']}]")
         else:
@@ -173,7 +174,6 @@ def render_upload_download_section(tab_key, tab_name):
             key=f"dl_{tab_key}"
         )
         
-        # Tạo thêm file Excel mẫu phụ trợ download
         df_sample = pd.DataFrame({"STT": [1, 2], "Nội dung": [f"Mẫu dữ liệu 1 - {tab_name}", f"Mẫu dữ liệu 2 - {tab_name}"]})
         buf = io.BytesIO()
         with pd.ExcelWriter(buf, engine='openpyxl') as writer:
@@ -222,7 +222,6 @@ with main_tab1:
     with sub_tab3:
         st.markdown("#### 💬 Thảo luận nhóm nội bộ & Cuộc gọi trực tuyến")
         
-        # Khu vực điều khiển Cuộc gọi nhóm
         call_col1, call_col2 = st.columns([2, 2])
         with call_col1:
             if not st.session_state.call_status:
@@ -245,7 +244,6 @@ with main_tab1:
         st.markdown("---")
         st.markdown("##### 📜 Luồng cuộc trò chuyện nhóm (Gom gọn trong khung):")
         
-        # Khung chat hiển thị sát nhau
         with st.container():
             st.markdown('<div class="chat-box">', unsafe_allow_html=True)
             if st.session_state.discussions:
@@ -256,7 +254,6 @@ with main_tab1:
                 st.write("_Chưa có nội dung trò chuyện nào._")
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Form nhập tin nhắn chat
         with st.form("chat_form", clear_on_submit=True):
             chat_input = st.text_input("Nhập nội dung trao đổi...")
             send_chat = st.form_submit_button("Gửi tin nhắn")
