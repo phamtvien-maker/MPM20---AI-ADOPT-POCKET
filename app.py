@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# GIAO DIỆN CSS: TÔ MÀU SẴN XANH LÁ HƠI ĐẬM & XANH DƯƠNG HƠI ĐẬM CHO 2 TAB
+# CSS ĐẶC BIỆT: ÉP BUỘC TÔ MÀU 2 TAB CHÍNH
 # ==========================================
 st.markdown("""
     <style>
@@ -28,39 +28,45 @@ st.markdown("""
         color: #e2e8f0;
     }
 
-    /* Ép kiểu màu sắc cố định sẵn cho 2 Tab chính (Nhánh 1 & Nhánh 2) */
-    /* Tab 1: Xanh lá hơi đậm */
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(1) {
+    /* Ép màu cho các tab bằng thuộc tính cấu trúc nội bộ của Streamlit */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 12px;
+        background-color: #161b22;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    /* Tab 1: Xanh lá hơi đậm (#15803d) */
+    .stTabs [data-baseweb="tab-list"] button:nth-child(1) {
         background-color: #15803d !important;
         color: #ffffff !important;
-        font-weight: 800 !important;
-        font-size: 1.05rem !important;
-        padding: 10px 25px !important;
-        border-radius: 10px 10px 0px 0px !important;
-        border: 2px solid #22c55e !important;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3) !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        padding: 8px 20px !important;
+        border: 1px solid #22c55e !important;
     }
 
-    /* Tab 2: Xanh dương hơi đậm */
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(2) {
+    /* Tab 2: Xanh dương hơi đậm (#0369a1) */
+    .stTabs [data-baseweb="tab-list"] button:nth-child(2) {
         background-color: #0369a1 !important;
         color: #ffffff !important;
-        font-weight: 800 !important;
-        font-size: 1.05rem !important;
-        padding: 10px 25px !important;
-        border-radius: 10px 10px 0px 0px !important;
-        border: 2px solid #38bdf8 !important;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3) !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        padding: 8px 20px !important;
+        border: 1px solid #38bdf8 !important;
     }
 
-    /* Trạng thái khi chọn active tab */
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(1) {
+    /* Trạng thái khi hover hoặc active */
+    .stTabs [data-baseweb="tab-list"] button:nth-child(1):hover,
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(1) {
         background-color: #166534 !important;
-        border: 2px solid #86efac !important;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
     }
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(2) {
+
+    .stTabs [data-baseweb="tab-list"] button:nth-child(2):hover,
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(2) {
         background-color: #075985 !important;
-        border: 2px solid #bae6fd !important;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
     }
 
     .chat-box {
@@ -138,7 +144,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# SAU KHI ĐĂNG NHẬP THÀNH CÔNG (TIÊU ĐỀ: MPM20 - AI)
+# SAU KHI ĐĂNG NHẬP THÀNH CÔNG
 # ==========================================
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
