@@ -18,7 +18,6 @@ st.markdown("""
     .main {
         background-color: #0b0f19;
     }
-    /* Hiệu ứng 3D và đóng khung cho các khối container */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
     }
@@ -40,7 +39,6 @@ st.markdown("""
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
         box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
     }
-    /* Khung chứa nội dung 3D */
     div.element-container {
         margin-bottom: 0.5rem;
     }
@@ -57,7 +55,7 @@ USER_CREDENTIALS = {
 
 # Khởi tạo bộ nhớ lưu trữ lịch sử thảo luận và file riêng biệt cho từng tab
 if "discussions" not in st.session_state:
-    st.session_state.discussions = [] # Lưu danh sách thảo luận toàn cục hoặc theo chuyên đề
+    st.session_state.discussions = []
 
 if "uploaded_files_store" not in st.session_state:
     st.session_state.uploaded_files_store = {
@@ -160,13 +158,11 @@ with main_tab1:
             st.markdown("##### 📤 Tải tài liệu lên Tab Doc")
             doc_file = st.file_uploader("Chọn file (PDF, Word, Excel...):", type=["pdf", "docx", "xlsx", "pptx", "png"], key="doc_up_file")
             if doc_file is not None:
-                # Lưu vào kho file của Tab Doc
                 file_info = {"name": doc_file.name, "size": round(doc_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                 if file_info not in st.session_state.uploaded_files_store["doc"]:
                     st.session_state.uploaded_files_store["doc"].append(file_info)
                 st.success(f"✅ Đã tải lên và lưu thành công file **{doc_file.name}** vào Tab Doc!")
 
-            # Hiển thị danh sách file đã lưu trong Tab Doc
             st.markdown("##### 📚 Danh sách file đã lưu trong Tab Doc:")
             if st.session_state.uploaded_files_store["doc"]:
                 for f in st.session_state.uploaded_files_store["doc"]:
@@ -216,9 +212,8 @@ with main_tab1:
                 st.error("Chưa chính xác, hãy xem lại tài liệu phần QS.")
                 
     with sub_tab3:
-        st.markdown("#### 💬 Thảo luận nhóm nội보 & Lịch sử thời gian")
+        st.markdown("#### 💬 Thảo luận nhóm nội bộ & Lịch sử thời gian")
         
-        # Form nhập nội dung thảo luận
         with st.form("discussion_form"):
             opinion = st.text_area("Nhập ý kiến đóng góp / Ghi chú dự án:")
             submit_disc = st.form_submit_button("Gửi ý kiến thảo luận")
@@ -228,7 +223,7 @@ with main_tab1:
                     "content": opinion.strip(),
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                st.session_state.discussions.insert(0, new_disc) # Đưa lên đầu
+                st.session_state.discussions.insert(0, new_disc)
                 st.success("✅ Ý kiến đã được lưu trữ vào hệ thống lịch sử!")
 
         st.markdown("---")
@@ -294,11 +289,12 @@ def process_qs_data(file_path):
 
         with col_pm2:
             st.markdown("##### 📥 Tải biểu mẫu PM về máy")
+            pm_sample_data = "Nhat ky thi cong mau MPM20".encode("utf-8")
             st.download_button(
-                label="📥 Tải Nhật ký thi công mẫu (Excel)",
-                data=b"Nhat ky thi công mau MPM20",
-                file_name="Nhat_ky_thi_cong_PM.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                label="📥 Tải Nhật ký thi công mẫu (Excel/TXT)",
+                data=pm_sample_data,
+                file_name="Nhat_ky_thi_cong_PM.txt",
+                mime="text/plain",
                 key="dl_pm_sample"
             )
             
@@ -315,7 +311,6 @@ def process_qs_data(file_path):
             ])
             st.dataframe(qs_df, use_container_width=True)
             
-            # Nút tải bảng khối lượng mẫu về máy
             buf_qs = io.BytesIO()
             with pd.ExcelWriter(buf_qs, engine='openpyxl') as writer:
                 qs_df.to_excel(writer, index=False, sheet_name='Khoi_luong_QS')
