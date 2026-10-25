@@ -3,7 +3,7 @@ import pandas as pd
 import io
 from datetime import datetime
 
-# Cấu hình giao diện trang web (Layout rộng tối đa)
+# Cấu hình giao diện trang web
 st.set_page_config(
     page_title="MPM20 - AI Adopt Pocket",
     page_icon="🚀",
@@ -12,18 +12,15 @@ st.set_page_config(
 )
 
 # ==========================================
-# CSS TỐI ƯU KHÔNG GIAN & TÔ MÀU TRỰC TIẾP CHO 2 TAB CHÍNH
+# GIAO DIỆN CSS: TÔ MÀU SẴN XANH LÁ HƠI ĐẬM & XANH DƯƠNG HƠI ĐẬM CHO 2 TAB
 # ==========================================
 st.markdown("""
     <style>
-    /* 1. Thu gọn khoảng trống lề trên cùng của trang web */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
         max-width: 100% !important;
     }
-    
-    /* Ẩn header mặc định của Streamlit để tiết kiệm không gian */
     header {visibility: hidden;}
     
     .main {
@@ -31,51 +28,41 @@ st.markdown("""
         color: #e2e8f0;
     }
 
-    /* 2. Ép kiểu và tô màu 3D trực tiếp cho 2 Tab chính (Nhánh 1 & Nhánh 2) */
-    /* Sử dụng attribute selector của Streamlit tabs để bắt chính xác tab cấp 1 */
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] {
-        gap: 15px !important;
-        background-color: transparent !important;
-        padding: 5px !important;
-    }
-
-    /* Tab Nhánh 1: Màu Xanh lá nhạt 3D */
+    /* Ép kiểu màu sắc cố định sẵn cho 2 Tab chính (Nhánh 1 & Nhánh 2) */
+    /* Tab 1: Xanh lá hơi đậm */
     div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(1) {
-        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
-        color: #14532d !important;
-        font-weight: 900 !important;
-        font-size: 1.1rem !important;
-        padding: 10px 25px !important;
-        border-radius: 12px 12px 0px 0px !important;
-        border: 2px solid #4ade80 !important;
-        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3) !important;
-    }
-
-    /* Tab Nhánh 2: Màu Xanh dương nhạt 3D */
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(2) {
-        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
-        color: #0c4a6e !important;
-        font-weight: 900 !important;
-        font-size: 1.1rem !important;
-        padding: 10px 25px !important;
-        border-radius: 12px 12px 0px 0px !important;
-        border: 2px solid #38bdf8 !important;
-        box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3) !important;
-    }
-
-    /* Trạng thái khi được chọn (Active) */
-    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(1) {
-        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+        background-color: #15803d !important;
         color: #ffffff !important;
-        box-shadow: 0 6px 15px rgba(22, 163, 74, 0.5) !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        padding: 10px 25px !important;
+        border-radius: 10px 10px 0px 0px !important;
+        border: 2px solid #22c55e !important;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Tab 2: Xanh dương hơi đậm */
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(2) {
+        background-color: #0369a1 !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        padding: 10px 25px !important;
+        border-radius: 10px 10px 0px 0px !important;
+        border: 2px solid #38bdf8 !important;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Trạng thái khi chọn active tab */
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(1) {
+        background-color: #166534 !important;
+        border: 2px solid #86efac !important;
     }
     div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(2) {
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-        color: #ffffff !important;
-        box-shadow: 0 6px 15px rgba(2, 132, 199, 0.5) !important;
+        background-color: #075985 !important;
+        border: 2px solid #bae6fd !important;
     }
 
-    /* Khung chat thảo luận */
     .chat-box {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -130,7 +117,7 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h2 style='text-align: center; color: #38bdf8;'>🚀 MPM20 – AI Adopt Pocket</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #38bdf8;'>🚀 MPM20 – AI</h2>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #94a3b8;'>Đăng nhập hệ thống bảo mật nội bộ</p>", unsafe_allow_html=True)
         
         with st.form("login_form"):
@@ -151,15 +138,14 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# SAU KHI ĐĂNG NHẬP THÀNH CÔNG (TỐI ƯU KHÔNG GIAN LÊN TRÊN)
+# SAU KHI ĐĂNG NHẬP THÀNH CÔNG (TIÊU ĐỀ: MPM20 - AI)
 # ==========================================
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
 
-# Đưa Header, Tiêu đề và Thống kê lên sát mép trên cùng của màn hình
 top_col1, top_col2, top_col3 = st.columns([3, 3, 1])
 with top_col1:
-    st.markdown("### ⚡ MPM20 - Dashboard Chuyên Sâu")
+    st.markdown("### ⚡ MPM20 - AI")
 with top_col2:
     st.markdown(f"👤 `{user_email}` | 🟢 Online: **{len(st.session_state.active_users)}** | 📊 Hôm nay: **{st.session_state.daily_visits}**")
 with top_col3:
@@ -235,7 +221,7 @@ def render_upload_download_section(tab_key, tab_name):
         st.write("_Chưa có tài liệu nào được tải lên._")
 
 # ==========================================
-# ĐIỀU HƯỚNG 2 NHÁNH CHÍNH (TÔ MÀU SẴN & HIỆU ỨNG 3D)
+# ĐIỀU HƯỚNG 2 NHÁNH CHÍNH
 # ==========================================
 main_tab1, main_tab2 = st.tabs([
     "📌 Nhánh 1: MPM (Quản trị & Tri thức)", 
