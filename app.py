@@ -11,57 +11,67 @@ st.set_page_config(
 )
 
 # ==========================================
-# GIAO DIỆN CSS 3D, ĐÓNG KHUNG VÀ MÀU SẮC TAB
+# GIAO DIỆN CSS: MÀU SẮC NHẸ NHÀNG, HIỆU ỨNG 3D & KHUNG CHAT
 # ==========================================
 st.markdown("""
     <style>
     .main {
-        background-color: #0b0f19;
+        background-color: #0e1117;
+        color: #e2e8f0;
     }
+    /* Tùy chỉnh màu sắc các Tab nhẹ nhàng, không chói */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 10px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
+        height: 45px;
         white-space: pre-wrap;
         background-color: #1e293b;
         border-radius: 8px 8px 0px 0px;
-        color: #ffffff;
-        font-weight: bold;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
+        color: #94a3b8;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: all 0.2s ease;
     }
     .stTabs [data-baseweb="tab"]:hover {
         background-color: #334155;
-        transform: translateY(-2px);
+        color: #f1f5f9;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
-    div.element-container {
-        margin-bottom: 0.5rem;
+    /* Khung chat thảo luận gom gọn */
+    .chat-box {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# CƠ SỞ DỮ LIỆU TÀI KHOẢN & LƯU TRỮ TẠM THỜI (SESSION STATE)
+# CƠ SỞ DỮ LIỆU TÀI KHOẢN & BỘ NHỚ LƯU TRỮ
 # ==========================================
 USER_CREDENTIALS = {
     "vuongtbichtuyen@gmail.com": "123456",
     "230110quynhanh@gmail.com": "123456",
 }
 
-# Khởi tạo bộ nhớ lưu trữ lịch sử thảo luận và file riêng biệt cho từng tab
+# Khởi tạo Session State cho lịch sử chat và kho lưu trữ file cho TẤT CẢ các tab
 if "discussions" not in st.session_state:
     st.session_state.discussions = []
 
+if "call_status" not in st.session_state:
+    st.session_state.call_status = False
+
 if "uploaded_files_store" not in st.session_state:
     st.session_state.uploaded_files_store = {
-        "doc": [],
-        "pm": [],
-        "qs": []
+        "doc": [], "exams": [], "disc": [], "insight": [],
+        "appcode": [], "example": [], "pm": [], "qs": []
     }
 
 if "active_users" not in st.session_state:
@@ -87,7 +97,7 @@ if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<h2 style='text-align: center; color: #38bdf8;'>🚀 MPM20 – AI Adopt Pocket</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #94a3b8;'>Hệ thống quản trị nội bộ 3D - Yêu cầu xác thực tài khoản</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #94a3b8;'>Đăng nhập hệ thống bảo mật nội bộ</p>", unsafe_allow_html=True)
         
         with st.form("login_form"):
             input_email = st.text_input("📧 Email Google:")
@@ -112,7 +122,7 @@ if not st.session_state.logged_in:
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
 
-# Header hiển thị thông tin & Thống kê trực quan
+# Header hiển thị thông tin & Thống kê
 hcol1, hcol2, hcol3 = st.columns([3, 3, 2])
 with hcol1:
     st.markdown(f"👤 **Thành viên:** `{user_email}`")
@@ -127,10 +137,57 @@ with hcol3:
         st.rerun()
 
 st.markdown("---")
-st.markdown("## ⚡ MPM20 - 3D Dashboard Quản Trị Dự Án")
+st.markdown("## ⚡ MPM20 - Dashboard Quản Trị Dự Án Chuyên Sâu")
 
 # ==========================================
-# ĐIỀU HƯỚNG NHÁNH CHÍNH DẠNG TAB 3D NGANG
+# HÀM HỖ TRỢ HIỂN THỊ KHUNG UPLOAD & DOWNLOAD CHUNG CHO MỌI TAB
+# ==========================================
+def render_upload_download_section(tab_key, tab_name):
+    st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
+    col_up, col_down = st.columns(2)
+    
+    with col_up:
+        st.markdown("##### 📤 Upload tài liệu lên hệ thống")
+        uploaded_file = st.file_uploader(f"Chọn file cho {tab_name}:", key=f"up_{tab_key}")
+        if uploaded_file is not None:
+            file_info = {"name": uploaded_file.name, "size": round(uploaded_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            if file_info not in st.session_state.uploaded_files_store[tab_key]:
+                st.session_state.uploaded_files_store[tab_key].append(file_info)
+            st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
+
+        st.markdown("##### 📚 Danh sách file đã lưu:")
+        if st.session_state.uploaded_files_store[tab_key]:
+            for f in st.session_state.uploaded_files_store[tab_key]:
+                st.info(f"📄 **{f['name']}** ({f['size']} KB) - *{f['user']}* [{f['time']}]")
+        else:
+            st.write("_Chưa có tài liệu nào._")
+
+    with col_down:
+        st.markdown("##### 📥 Download biểu mẫu/tài liệu về máy")
+        sample_text = f"TÀI LIỆU TIU CHUẨN MPM20 - PHÂN MỤC {tab_name.upper()}".encode("utf-8")
+        st.download_button(
+            label=f"📥 Tải tài liệu mẫu {tab_name} (TXT/PDF)",
+            data=sample_text,
+            file_name=f"Tai_lieu_{tab_key}_MPM20.txt",
+            mime="text/plain",
+            key=f"dl_{tab_key}"
+        )
+        
+        # Tạo thêm file Excel mẫu phụ trợ download
+        df_sample = pd.DataFrame({"STT": [1, 2], "Nội dung": [f"Mẫu dữ liệu 1 - {tab_name}", f"Mẫu dữ liệu 2 - {tab_name}"]})
+        buf = io.BytesIO()
+        with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+            df_sample.to_excel(writer, index=False, sheet_name='Sheet1')
+        st.download_button(
+            label=f"📊 Tải Biểu mẫu Excel {tab_name}",
+            data=buf.getvalue(),
+            file_name=f"Bieu_mau_{tab_key}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key=f"dl_excel_{tab_key}"
+        )
+
+# ==========================================
+# ĐIỀU HƯỚNG NHÁNH CHÍNH
 # ==========================================
 main_tab1, main_tab2 = st.tabs([
     "📌 Nhánh 1: MPM (Quản trị & Tri thức)", 
@@ -141,110 +198,86 @@ main_tab1, main_tab2 = st.tabs([
 # NỘI DUNG NHÁNH 1
 # ==========================================
 with main_tab1:
-    st.markdown("### 📌 MPM Core System")
-    
     sub_tab1, sub_tab2, sub_tab3, sub_tab4 = st.tabs([
-        "📄 Doc (Tài liệu & Upload)", 
-        "📝 Exams (Bài kiểm tra)", 
-        "💬 Disc. (Thảo luận & Lịch sử)", 
+        "📄 Doc", 
+        "📝 Exams", 
+        "💬 Disc. (Thảo luận & Gọi nhóm)", 
         "💡 Core Insight"
     ])
     
     with sub_tab1:
-        st.markdown("#### 📂 Kho Tài liệu & Quản lý File Nội bộ (Tab Doc)")
-        col_up, col_down = st.columns(2)
-        
-        with col_up:
-            st.markdown("##### 📤 Tải tài liệu lên Tab Doc")
-            doc_file = st.file_uploader("Chọn file (PDF, Word, Excel...):", type=["pdf", "docx", "xlsx", "pptx", "png"], key="doc_up_file")
-            if doc_file is not None:
-                file_info = {"name": doc_file.name, "size": round(doc_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                if file_info not in st.session_state.uploaded_files_store["doc"]:
-                    st.session_state.uploaded_files_store["doc"].append(file_info)
-                st.success(f"✅ Đã tải lên và lưu thành công file **{doc_file.name}** vào Tab Doc!")
-
-            st.markdown("##### 📚 Danh sách file đã lưu trong Tab Doc:")
-            if st.session_state.uploaded_files_store["doc"]:
-                for f in st.session_state.uploaded_files_store["doc"]:
-                    st.info(f"📄 **{f['name']}** ({f['size']} KB) - Tải lên bởi *{f['user']}* vào lúc `{f['time']}`")
-            else:
-                st.write("_Chưa có tài liệu nào được tải lên._")
-
-        with col_down:
-            st.markdown("##### 📥 Tải tài liệu mẫu về máy")
-            doc_sample_1 = "TÀI LIỆU QUY TRÌNH MPM20 SYSTEM - BẢN CHUẨN 2026"
-            st.download_button(
-                label="📄 Tải Quy trình MPM20 (TXT/PDF)",
-                data=doc_sample_1,
-                file_name="Quy_trinh_MPM20_Standard.txt",
-                mime="text/plain",
-                key="dl_doc_tab1"
-            )
-            
-            df_template = pd.DataFrame({
-                "STT": [1, 2, 3],
-                "Tên tài liệu": ["Quy chuẩn thiết kế", "Hồ sơ nghiệm thu", "Báo cáo tuần"],
-                "Trạng thái": ["Phê duyệt", "Đang xem xét", "Mới"]
-            })
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_template.to_excel(writer, index=False, sheet_name='Danh_sach')
-            
-            st.download_button(
-                label="📊 Tải Biểu mẫu Báo cáo (Excel)",
-                data=buffer.getvalue(),
-                file_name="Bieu_mau_MPM20.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="dl_excel_tab1"
-            )
+        render_upload_download_section("doc", "Doc (Tài liệu)")
             
     with sub_tab2:
-        st.markdown("#### 📝 Bài kiểm tra đánh giá năng lực")
-        ans = st.radio("Đâu là tiêu chí quan trọng nhất trong quản lý chi phí (QS)?", (
-            "Kiểm soát khối lượng & dự toán", 
-            "Trang trí văn phòng", 
-            "Thời gian họp"
-        ), key="exam_r1")
-        if st.button("Kiểm tra kết quả", key="btn_ex1"):
+        render_upload_download_section("exams", "Exams (Bài kiểm tra)")
+        st.markdown("---")
+        st.markdown("##### Câu hỏi đánh giá nhanh:")
+        ans = st.radio("Đâu là tiêu chí quan trọng nhất trong quản lý chi phí (QS)?", ("Kiểm soát khối lượng & dự toán", "Thời gian họp"), key="ex_r")
+        if st.button("Kiểm tra kết quả"):
             if "Kiểm soát" in ans:
-                st.success(f"Chúc mừng tài khoản **{user_email}**, chính xác tuyệt đối!")
+                st.success("Chính xác tuyệt đối!")
             else:
-                st.error("Chưa chính xác, hãy xem lại tài liệu phần QS.")
+                st.error("Chưa chính xác.")
                 
     with sub_tab3:
-        st.markdown("#### 💬 Thảo luận nhóm nội bộ & Lịch sử thời gian")
+        st.markdown("#### 💬 Thảo luận nhóm nội bộ & Cuộc gọi trực tuyến")
         
-        with st.form("discussion_form"):
-            opinion = st.text_area("Nhập ý kiến đóng góp / Ghi chú dự án:")
-            submit_disc = st.form_submit_button("Gửi ý kiến thảo luận")
-            if submit_disc and opinion.strip():
-                new_disc = {
-                    "user": user_email,
-                    "content": opinion.strip(),
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-                st.session_state.discussions.insert(0, new_disc)
-                st.success("✅ Ý kiến đã được lưu trữ vào hệ thống lịch sử!")
+        # Khu vực điều khiển Cuộc gọi nhóm
+        call_col1, call_col2 = st.columns([2, 2])
+        with call_col1:
+            if not st.session_state.call_status:
+                if st.button("📞 🟢 Bắt đầu cuộc gọi nhóm", use_container_width=True):
+                    st.session_state.call_status = True
+                    st.rerun()
+            else:
+                if st.button("📴 🔴 Kết thúc cuộc gọi nhóm", use_container_width=True):
+                    st.session_state.call_status = False
+                    st.rerun()
+        with call_col2:
+            if st.session_state.call_status:
+                st.markdown("🟢 **Trạng thái:** Đang trong cuộc gọi nhóm trực tuyến...")
+            else:
+                st.markdown("⚪ **Trạng thái:** Cuộc gọi đã kết thúc.")
 
         st.markdown("---")
-        st.markdown("##### 📜 Lịch sử nội dung thảo luận:")
-        if st.session_state.discussions:
-            for item in st.session_state.discussions:
-                st.markdown(f"> 🕒 **{item['time']}** | 👤 **{item['user']}**:\n>\n> {item['content']}")
-                st.markdown("---")
-        else:
-            st.write("_Chưa có ý kiến thảo luận nào được ghi nhận._")
+        render_upload_download_section("disc", "Disc (Thảo luận)")
+        
+        st.markdown("---")
+        st.markdown("##### 📜 Luồng cuộc trò chuyện nhóm (Gom gọn trong khung):")
+        
+        # Khung chat hiển thị sát nhau
+        with st.container():
+            st.markdown('<div class="chat-box">', unsafe_allow_html=True)
+            if st.session_state.discussions:
+                for item in st.session_state.discussions:
+                    st.markdown(f"💬 **{item['user']}** <span style='color: gray; font-size: 0.8rem;'>({item['time']})</span>:<br>{item['content']}", unsafe_allow_html=True)
+                    st.markdown("<hr style='margin: 5px 0; border-color: #30363d;'>", unsafe_allow_html=True)
+            else:
+                st.write("_Chưa có nội dung trò chuyện nào._")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Form nhập tin nhắn chat
+        with st.form("chat_form", clear_on_submit=True):
+            chat_input = st.text_input("Nhập nội dung trao đổi...")
+            send_chat = st.form_submit_button("Gửi tin nhắn")
+            if send_chat and chat_input.strip():
+                new_msg = {
+                    "user": user_email,
+                    "content": chat_input.strip(),
+                    "time": datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
+                }
+                st.session_state.discussions.append(new_msg)
+                st.rerun()
             
     with sub_tab4:
-        st.markdown("#### 💡 Core Insight (Góc nhìn cốt lõi)")
+        render_upload_download_section("insight", "Core Insight")
+        st.markdown("---")
         st.info("Phân tích chiến lược tích hợp AI vào vận hành quản lý dự án, tối ưu hóa dòng tiền và tiến độ thi công hạ tầng đô thị.")
 
 # ==========================================
 # NỘI DUNG NHÁNH 2
 # ==========================================
 with main_tab2:
-    st.markdown("### 🛠️ Ứng dụng & Giải pháp Thực thi")
-    
     sub_tab_2a, sub_tab_2b, sub_tab_2c, sub_tab_2d = st.tabs([
         "💻 App & Code", 
         "📊 Example Works", 
@@ -253,87 +286,26 @@ with main_tab2:
     ])
     
     with sub_tab_2a:
-        st.markdown("#### 💻 Ứng dụng & Mã nguồn Python tự động hóa")
-        st.code("""
-import pandas as pd
-
+        render_upload_download_section("appcode", "App & Code")
+        st.markdown("---")
+        st.code("""import pandas as pd
 def process_qs_data(file_path):
     df = pd.read_excel(file_path)
-    print("Xử lý dữ liệu QS thành công!")
-    return df
-        """, language="python")
+    return df""", language="python")
         
     with sub_tab_2b:
-        st.markdown("#### 📊 Example Works (Case study mẫu)")
+        render_upload_download_section("example", "Example Works")
+        st.markdown("---")
         st.write("- Mô phỏng quản lý hạ tầng Khu đô thị Vạn Phúc.\n- Tự động hóa báo cáo tuần qua Python & Excel.")
         
     with sub_tab_2c:
-        st.markdown("#### 🏗️ PM Construction (Quản lý dự án)")
-        col_pm1, col_pm2 = st.columns(2)
-        
-        with col_pm1:
-            st.markdown("##### 📤 Upload Báo cáo tiến độ (PM)")
-            pm_file = st.file_uploader("Tải lên tệp PM (.pdf, .docx, .xlsx):", key="pm_up_file", type=["pdf", "docx", "xlsx"])
-            if pm_file:
-                file_info = {"name": pm_file.name, "size": round(pm_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                if file_info not in st.session_state.uploaded_files_store["pm"]:
-                    st.session_state.uploaded_files_store["pm"].append(file_info)
-                st.success(f"✅ Đã lưu file PM: **{pm_file.name}**")
-
-            st.markdown("##### 📁 Kho file PM đã lưu:")
-            if st.session_state.uploaded_files_store["pm"]:
-                for f in st.session_state.uploaded_files_store["pm"]:
-                    st.info(f"🏗️ **{f['name']}** ({f['size']} KB) - *{f['user']}* [{f['time']}]")
-            else:
-                st.write("_Chưa có tài liệu PM nào._")
-
-        with col_pm2:
-            st.markdown("##### 📥 Tải biểu mẫu PM về máy")
-            pm_sample_data = "Nhat ky thi cong mau MPM20".encode("utf-8")
-            st.download_button(
-                label="📥 Tải Nhật ký thi công mẫu (Excel/TXT)",
-                data=pm_sample_data,
-                file_name="Nhat_ky_thi_cong_PM.txt",
-                mime="text/plain",
-                key="dl_pm_sample"
-            )
+        render_upload_download_section("pm", "PM Construction")
             
     with sub_tab_2d:
-        st.markdown("#### 📐 QS Construction (Kỹ sư Định lượng / Khối lượng)")
-        
-        col_qs1, col_qs2 = st.columns(2)
-        with col_qs1:
-            st.markdown("##### Bảng tổng hợp khối lượng mẫu")
-            qs_df = pd.DataFrame([
-                {"STT": 1, "Hạng mục": "Bê tông móng", "Khối lượng": "1,200 m3", "Đơn giá (VND)": "1,500,000"},
-                {"STT": 2, "Hạng mục": "Cốt thép D12-D28", "Khối lượng": "120 Tấn", "Đơn giá (VND)": "18,000,000"},
-                {"STT": 3, "Hạng mục": "Cáp hạ thế XLPE/PVC", "Khối lượng": "450 m", "Đơn giá (VND)": "320,000"}
-            ])
-            st.dataframe(qs_df, use_container_width=True)
-            
-            buf_qs = io.BytesIO()
-            with pd.ExcelWriter(buf_qs, engine='openpyxl') as writer:
-                qs_df.to_excel(writer, index=False, sheet_name='Khoi_luong_QS')
-            st.download_button(
-                label="📊 Tải Bảng khối lượng QS (Excel)",
-                data=buf_qs.getvalue(),
-                file_name="Bang_Khoi_Luong_QS.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="dl_qs_table"
-            )
-
-        with col_qs2:
-            st.markdown("##### 📤 Upload bảng tính dự toán QS")
-            qs_file = st.file_uploader("Tải lên file dự toán (.xlsx, .xls):", key="qs_up_file", type=["xlsx", "xls"])
-            if qs_file:
-                file_info = {"name": qs_file.name, "size": round(qs_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                if file_info not in st.session_state.uploaded_files_store["qs"]:
-                    st.session_state.uploaded_files_store["qs"].append(file_info)
-                st.success(f"✅ Đã lưu file QS: **{qs_file.name}**")
-
-            st.markdown("##### 📁 Kho file QS đã lưu:")
-            if st.session_state.uploaded_files_store["qs"]:
-                for f in st.session_state.uploaded_files_store["qs"]:
-                    st.info(f"📐 **{f['name']}** ({f['size']} KB) - *{f['user']}* [{f['time']}]")
-            else:
-                st.write("_Chưa có tài liệu QS nào._")
+        render_upload_download_section("qs", "QS Construction")
+        st.markdown("---")
+        qs_df = pd.DataFrame([
+            {"STT": 1, "Hạng mục": "Bê tông móng", "Khối lượng": "1,200 m3", "Đơn giá (VND)": "1,500,000"},
+            {"STT": 2, "Hạng mục": "Cốt thép D12-D28", "Khối lượng": "120 Tấn", "Đơn giá (VND)": "18,000,000"}
+        ])
+        st.dataframe(qs_df, use_container_width=True)
