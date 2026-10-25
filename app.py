@@ -9,9 +9,61 @@ st.set_page_config(
     layout="wide"
 )
 
+# ==========================================
+# CƠ SỞ DỮ LIỆU THÀNH VIÊN (EMAIL & MẬT KHẨU)
+# ==========================================
+# Bạn có thể thay đổi hoặc thêm email và mật khẩu tương ứng cho tối đa 10 thành viên
+USER_CREDENTIALS = {
+    "vuongtbichtuyen@gmail.com": "123456tuyen",       # Mật khẩu mẫu, có thể đổi tùy ý
+    "230110quynhanh@gmail.com": "123456anh",
+    # Thêm thành viên tiếp theo vào đây:
+    # "thanhvien3@gmail.com": "matkhau3",
+}
+
+# Khởi tạo trạng thái phiên làm việc
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.user_email = ""
+
+# Giao diện Đăng nhập tại Sidebar
+st.sidebar.markdown("### 🔐 Đăng nhập hệ thống MPM20")
+
+if not st.session_state.logged_in:
+    st.sidebar.info("Vui lòng nhập chính xác Email và Mật khẩu được cấp.")
+    
+    input_email = st.sidebar.text_input("📧 Nhập Email Google:")
+    input_password = st.sidebar.text_input("🔑 Nhập Mật khẩu:", type="password")
+    
+    if st.sidebar.button("Đăng nhập"):
+        cleaned_email = input_email.strip().lower()
+        
+        # Kiểm tra xem email có tồn tại và mật khẩu có khớp không
+        if cleaned_email in USER_CREDENTIALS and USER_CREDENTIALS[cleaned_email] == input_password:
+            st.session_state.logged_in = True
+            st.session_state.user_email = cleaned_email
+            st.rerun()
+        else:
+            st.sidebar.error("❌ Sai Email hoặc Mật khẩu! Vui lòng kiểm tra lại.")
+            
+    st.stop() # Dừng lại, không cho xem nội dung bên trong nếu chưa đăng nhập đúng
+
+# ==========================================
+# NỘI DUNG CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
+# ==========================================
+user_email = st.session_state.user_email
+
+# Nút đăng xuất ở Sidebar
+if st.sidebar.button("🚪 Đăng xuất"):
+    st.session_state.logged_in = False
+    st.session_state.user_email = ""
+    st.rerun()
+
+st.sidebar.success(f"✅ Đang đăng nhập:\n**{user_email}**")
+st.sidebar.markdown("---")
+
 # Tiêu đề chính của Website
 st.title("🚀 MPM20 – AI Adopt Pocket")
-st.caption("Nền tảng quản trị dự án, lưu trữ tài liệu & ứng dụng AI chuyên sâu (Tối đa 10 thành viên)")
+st.caption("Nền tảng quản trị dự án, lưu trữ tài liệu & ứng dụng AI chuyên sâu (Giới hạn nội bộ 10 thành viên)")
 
 # Thanh điều hướng phân chia theo 2 nhánh chính
 branch = st.sidebar.radio("📂 Chọn nhánh chính:", [
@@ -34,11 +86,10 @@ if branch == "📌 Nhánh 1: MPM (Quản trị & Tri thức)":
     
     if sub_menu_1 == "Doc (Tài liệu & Upload)":
         st.subheader("📄 Kho Tài liệu & Quản lý File Nội bộ")
-        st.write("Nơi lưu trữ, chia sẻ và tải lên/tải về các tài liệu chuẩn của hệ thống MPM20.")
+        st.write(f"Xin chào thành viên (`{user_email}`), bạn có thể tải lên và tải về tài liệu chuẩn tại đây.")
         
         col_up, col_down = st.columns(2)
         
-        # --- TÍNH NĂNG UPLOAD ---
         with col_up:
             st.markdown("### 📤 Tải tài liệu mới lên Web")
             uploaded_file = st.file_uploader(
@@ -47,14 +98,10 @@ if branch == "📌 Nhánh 1: MPM (Quản trị & Tri thức)":
                 key="doc_upload"
             )
             if uploaded_file is not None:
-                st.success(f"✅ Đã tải lên thành công file: **{uploaded_file.name}**")
-                st.info(f"Dung lượng: {round(uploaded_file.size / 1024, 2)} KB")
+                st.success(f"✅ Tệp do **{user_email}** tải lên: **{uploaded_file.name}** ({round(uploaded_file.size / 1024, 2)} KB)")
 
-        # --- TÍNH NĂNG DOWNLOAD ---
         with col_down:
             st.markdown("### 📥 Tải tài liệu mẫu về máy")
-            st.write("Danh sách tài liệu tiêu chuẩn có sẵn:")
-            
             doc_sample_1 = "TÀI LIỆU QUY TRÌNH MPM20 SYSTEM - BẢN CHUẨN 2026"
             st.download_button(
                 label="📄 Tải Quy trình MPM20 (TXT/PDF)",
@@ -78,7 +125,7 @@ if branch == "📌 Nhánh 1: MPM (Quản trị & Tri thức)":
                 file_name="Bieu_mau_MPM20.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-        
+            
     elif sub_menu_1 == "Exams (Bài kiểm tra)":
         st.subheader("📝 Bài kiểm tra đánh giá năng lực")
         ans = st.radio("Đâu là tiêu chí quan trọng nhất trong quản lý chi phí (QS)?", (
@@ -88,16 +135,15 @@ if branch == "📌 Nhánh 1: MPM (Quản trị & Tri thức)":
         ))
         if st.button("Kiểm tra kết quả"):
             if "Kiểm soát" in ans:
-                st.success("Chính xác tuyệt đối!")
+                st.success(f"Chúc mừng tài khoản **{user_email}**, chính xác tuyệt đối!")
             else:
                 st.error("Chưa chính xác, hãy xem lại tài liệu phần QS.")
                 
     elif sub_menu_1 == "Disc. (Thảo luận)":
-        st.subheader("💬 Thảo luận nhóm MPM (Tối đa 10 thành viên)")
-        name = st.text_input("Tên thành viên:")
+        st.subheader("💬 Thảo luận nhóm nội bộ MPM")
         opinion = st.text_area("Ý kiến đóng góp / Ghi chú dự án:")
-        if st.button("Gửi ý kiến") and name and opinion:
-            st.success(f"Cảm ơn **{name}**, ý kiến đã được ghi nhận trên hệ thống nội bộ.")
+        if st.button("Gửi ý kiến") and opinion:
+            st.success(f"Ý kiến từ email **{user_email}** đã được ghi nhận vào hệ thống nội bộ.")
             
     elif sub_menu_1 == "Core Insight":
         st.subheader("💡 Core Insight (Góc nhìn cốt lõi)")
@@ -118,7 +164,6 @@ else:
     
     if sub_menu_2 == "App & Code":
         st.subheader("💻 Ứng dụng & Mã nguồn Python tự động hóa")
-        st.write("Các đoạn mã tự động bóc tách khối lượng và phân tích dự án:")
         st.code("""
 import pandas as pd
 
@@ -134,15 +179,13 @@ def process_qs_data(file_path):
         
     elif sub_menu_2 == "PM Construction (Quản lý dự án)":
         st.subheader("🏗️ PM Construction (Dành cho Quản lý dự án xây dựng)")
-        st.write("Giải pháp điều phối thi công, quản lý nhà thầu và hồ sơ bản vẽ.")
-        
+        st.write(f"Tài khoản đang thao tác: **{user_email}**")
         up_pm = st.file_uploader("📤 Upload Báo cáo tiến độ / Nhật ký thi công (PM):", key="pm_up")
         if up_pm:
-            st.success(f"Đã ghi nhận tệp PM: {up_pm.name}")
-        
+            st.success(f"Đã ghi nhận tệp PM từ **{user_email}**ခင် {up_pm.name}")
+            
     elif sub_menu_2 == "QS Construction (Định lượng & Dự toán)":
         st.subheader("📐 QS Construction (Dành cho Kỹ sư Định lượng / Khối lượng)")
-        st.write("Công cụ kiểm soát khối lượng phát sinh, thanh quyết toán và dự toán chi phí.")
         
         st.markdown("#### Bảng tổng hợp khối lượng mẫu")
         qs_df = pd.DataFrame([
@@ -154,4 +197,4 @@ def process_qs_data(file_path):
         
         up_qs = st.file_uploader("📤 Upload bảng tính dự toán / Bóc tách khối lượng (.xlsx):", key="qs_up", type=["xlsx", "xls"])
         if up_qs:
-            st.success(f"Đã tải lên tệp dữ liệu QS: {up_qs.name}")
+            st.success(f"Đã tải lên tệp QS từ email **{user_email}**: {up_qs.name}")
