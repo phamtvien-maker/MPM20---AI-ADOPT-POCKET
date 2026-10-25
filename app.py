@@ -65,11 +65,9 @@ if "discussions" not in st.session_state:
 if "call_status" not in st.session_state:
     st.session_state.call_status = False
 
-# Khởi tạo đầy đủ tất cả các khóa cho toàn bộ tab để tránh lỗi KeyError
 if "uploaded_files_store" not in st.session_state:
     st.session_state.uploaded_files_store = {}
 
-# Đảm bảo mọi tab đều có kho lưu trữ riêng
 for tab_k in ["doc", "exams", "disc", "insight", "appcode", "example", "pm", "qs"]:
     if tab_k not in st.session_state.uploaded_files_store:
         st.session_state.uploaded_files_store[tab_k] = []
@@ -139,7 +137,7 @@ st.markdown("---")
 st.markdown("## ⚡ MPM20 - Dashboard Quản Trị Dự Án Chuyên Sâu")
 
 # ==========================================
-# HÀM HỖ TRỢ HIỂN THỊ KHUNG UPLOAD & DOWNLOAD CHUNG CHO MỌI TAB
+# HÀM HỖ TRỢ HIỂN THỊ KHUNG UPLOAD, DOWNLOAD & ĐỌC TRỰC TIẾP
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
     st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
@@ -149,42 +147,74 @@ def render_upload_download_section(tab_key, tab_name):
         st.markdown("##### 📤 Upload tài liệu lên hệ thống")
         uploaded_file = st.file_uploader(f"Chọn file cho {tab_name}:", key=f"up_{tab_key}")
         if uploaded_file is not None:
-            file_info = {"name": uploaded_file.name, "size": round(uploaded_file.size / 1024, 2), "user": user_email, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            file_bytes = uploaded_file.getvalue()
+            file_info = {
+                "name": uploaded_file.name, 
+                "size": round(uploaded_file.size / 1024, 2), 
+                "user": user_email, 
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "data": file_bytes,
+                "type": uploaded_file.type
+            }
             if tab_key not in st.session_state.uploaded_files_store:
                 st.session_state.uploaded_files_store[tab_key] = []
-            if file_info not in st.session_state.uploaded_files_store[tab_key]:
+            
+            # Tránh trùng lặp tên file liên tục trong cùng phiên nếu upload lại
+            if not any(f['name'] == uploaded_file.name and f['time'] == file_info['time'] for f in st.session_state.uploaded_files_store[tab_key]):
                 st.session_state.uploaded_files_store[tab_key].append(file_info)
-            st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
-
-        st.markdown("##### 📚 Danh sách file đã lưu:")
-        if tab_key in st.session_state.uploaded_files_store and st.session_state.uploaded_files_store[tab_key]:
-            for f in st.session_state.uploaded_files_store[tab_key]:
-                st.info(f"📄 **{f['name']}** ({f['size']} KB) - *{f['user']}* [{f['time']}]")
-        else:
-            st.write("_Chưa có tài liệu nào._")
+                st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
 
     with col_down:
-        st.markdown("##### 📥 Download biểu mẫu/tài liệu về máy")
+        st.markdown("##### 📥 Download biểu mẫu hệ thống")
         sample_text = f"TÀI LIỆU TIU CHUẨN MPM20 - PHÂN MỤC {tab_name.upper()}".encode("utf-8")
         st.download_button(
-            label=f"📥 Tải tài liệu mẫu {tab_name} (TXT/PDF)",
+            label=f"📥 Tải tài liệu mẫu {tab_name} (TXT)",
             data=sample_text,
             file_name=f"Tai_lieu_{tab_key}_MPM20.txt",
             mime="text/plain",
-            key=f"dl_{tab_key}"
+            key=f"dl_sample_{tab_key}"
         )
-        
-        df_sample = pd.DataFrame({"STT": [1, 2], "Nội dung": [f"Mẫu dữ liệu 1 - {tab_name}", f"Mẫu dữ liệu 2 - {tab_name}"]})
-        buf = io.BytesIO()
-        with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-            df_sample.to_excel(writer, index=False, sheet_name='Sheet1')
-        st.download_button(
-            label=f"📊 Tải Biểu mẫu Excel {tab_name}",
-            data=buf.getvalue(),
-            file_name=f"Bieu_mau_{tab_key}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key=f"dl_excel_{tab_key}"
-        )
+
+    st.markdown("---")
+    st.markdown("##### 📚 Danh sách tài liệu đã lưu & Tùy chọn (Tải về / Đọc trực tiếp):")
+    
+    if tab_key in st.session_state.uploaded_files_store and st.session_state.uploaded_files_store[tab_key]:
+        for idx, f in enumerate(st.session_state.uploaded_files_store[tab_key]):
+            # Bố trí từng file có thông tin và nút thao tác sát bên cạnh
+            f_col1, f_col2, f_col3 = st.columns([3, 1, 1])
+            with f_col1:
+                st.markdown(f"📄 **{f['name']}** `({f['size']} KB)`<br><span style='font-size:0.8rem; color:gray;'>Tải bởi: {f['user']} [{f['time']}]</span>", unsafe_allow_html=True)
+            with f_col2:
+                # Nút tải file đã upload về máy
+                st.download_button(
+                    label="📥 Tải về",
+                    data=f['data'],
+                    file_name=f['name'],
+                    key=f"dl_file_{tab_key}_{idx}"
+                )
+            with f_col3:
+                # Nút bấm để đọc/xem trực tiếp nội dung file ngay trên web
+                if st.button("📖 Đọc", key=f"read_file_{tab_key}_{idx}"):
+                    st.session_state[f"view_{tab_key}_{idx}"] = not st.session_state.get(f"view_{tab_key}_{idx}", False)
+
+            # Hiển thị nội dung đọc trực tiếp nếu được bật
+            if st.session_state.get(f"view_{tab_key}_{idx}", False):
+                with st.expander(f"🔎 Xem trước nội dung: {f['name']}", expanded=True):
+                    try:
+                        if "text" in f['type'] or f['name'].endswith(('.txt', '.py', '.csv', '.md', '.json')):
+                            st.text(f['data'].decode("utf-8", errors="ignore"))
+                        elif f['name'].endswith(('.xlsx', '.xls')):
+                            df_view = pd.read_excel(io.BytesIO(f['data']))
+                            st.dataframe(df_view, use_container_width=True)
+                        elif "image" in f['type']:
+                            st.image(f['data'], caption=f['name'])
+                        else:
+                            st.info("Trình duyệt hỗ trợ xem trực tiếp với định dạng Văn bản, Excel, Hình ảnh và CSV. Bạn có thể nhấn 'Tải về' để xem đầy đủ các định dạng khác.")
+                    except Exception as e:
+                        st.error(f"Không thể đọc trực tiếp file này: {e}")
+            st.markdown("---")
+    else:
+        st.write("_Chưa có tài liệu nào được tải lên._")
 
 # ==========================================
 # ĐIỀU HƯỚNG NHÁNH CHÍNH
