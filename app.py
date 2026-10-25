@@ -16,6 +16,7 @@ st.set_page_config(
 USER_CREDENTIALS = {
     "vuongtbichtuyen@gmail.com": "123456tuyen",       # Mật khẩu mẫu, có thể đổi tùy ý
     "230110quynhanh@gmail.com": "123456anh",
+    "phamtvien@gmail.com": "123456vien",
     # Thêm thành viên tiếp theo vào đây:
     # "thanhvien3@gmail.com": "matkhau3",
 }
