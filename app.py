@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# GIAO DIỆN CSS: MÀU SẮC NHẸ NHÀNG, HIỆU ỨNG 3D & KHUNG CHAT
+# GIAO DIỆN CSS: MÀU SẮC TAB CỐ ĐỊNH, NHẸ NHÀNG & KHUNG CHAT
 # ==========================================
 st.markdown("""
     <style>
@@ -19,28 +19,35 @@ st.markdown("""
         background-color: #0e1117;
         color: #e2e8f0;
     }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 45px;
-        white-space: pre-wrap;
-        background-color: #1e293b;
+    
+    /* Tô màu cố định sẵn cho 2 Tab nhánh chính */
+    /* Tab Nhánh 1: Xanh lá nhạt */
+    div.stTabs [data-baseweb="tab-list"] button:nth-child(1) {
+        background-color: #dcfce7 !important;
+        color: #166534 !important;
+        font-weight: bold;
         border-radius: 8px 8px 0px 0px;
-        color: #94a3b8;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        transition: all 0.2s ease;
+        border: 1px solid #bbf7d0;
     }
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: #334155;
-        color: #f1f5f9;
+    /* Tab Nhánh 2: Xanh dương hơi nhạt */
+    div.stTabs [data-baseweb="tab-list"] button:nth-child(2) {
+        background-color: #e0f2fe !important;
+        color: #0369a1 !important;
+        font-weight: bold;
+        border-radius: 8px 8px 0px 0px;
+        border: 1px solid #bae6fd;
     }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    
+    /* Hiệu ứng khi được chọn active */
+    div.stTabs [data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(1) {
+        background-color: #22c55e !important;
         color: #ffffff !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
+    div.stTabs [data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(2) {
+        background-color: #0284c7 !important;
+        color: #ffffff !important;
+    }
+
     .chat-box {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -57,6 +64,7 @@ st.markdown("""
 USER_CREDENTIALS = {
     "vuongtbichtuyen@gmail.com": "123456",
     "230110quynhanh@gmail.com": "123456",
+    "phamtvien@gmail.com": "123456",  # Thêm tài khoản theo yêu cầu
 }
 
 if "discussions" not in st.session_state:
@@ -137,55 +145,39 @@ st.markdown("---")
 st.markdown("## ⚡ MPM20 - Dashboard Quản Trị Dự Án Chuyên Sâu")
 
 # ==========================================
-# HÀM HỖ TRỢ HIỂN THỊ KHUNG UPLOAD, DOWNLOAD & ĐỌC TRỰC TIẾP
+# HÀM HỖ TRỢ UPLOAD VÀ QUẢN LÝ TÀI LIỆU (ĐÃ LOẠI BỎ DOWNLOAD MẪU)
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
     st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
-    col_up, col_down = st.columns(2)
     
-    with col_up:
-        st.markdown("##### 📤 Upload tài liệu lên hệ thống")
-        uploaded_file = st.file_uploader(f"Chọn file cho {tab_name}:", key=f"up_{tab_key}")
-        if uploaded_file is not None:
-            file_bytes = uploaded_file.getvalue()
-            file_info = {
-                "name": uploaded_file.name, 
-                "size": round(uploaded_file.size / 1024, 2), 
-                "user": user_email, 
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "data": file_bytes,
-                "type": uploaded_file.type
-            }
-            if tab_key not in st.session_state.uploaded_files_store:
-                st.session_state.uploaded_files_store[tab_key] = []
-            
-            # Tránh trùng lặp tên file liên tục trong cùng phiên nếu upload lại
-            if not any(f['name'] == uploaded_file.name and f['time'] == file_info['time'] for f in st.session_state.uploaded_files_store[tab_key]):
-                st.session_state.uploaded_files_store[tab_key].append(file_info)
-                st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
-
-    with col_down:
-        st.markdown("##### 📥 Download biểu mẫu hệ thống")
-        sample_text = f"TÀI LIỆU TIU CHUẨN MPM20 - PHÂN MỤC {tab_name.upper()}".encode("utf-8")
-        st.download_button(
-            label=f"📥 Tải tài liệu mẫu {tab_name} (TXT)",
-            data=sample_text,
-            file_name=f"Tai_lieu_{tab_key}_MPM20.txt",
-            mime="text/plain",
-            key=f"dl_sample_{tab_key}"
-        )
+    st.markdown("##### 📤 Upload tài liệu lên hệ thống")
+    uploaded_file = st.file_uploader(f"Chọn file cho {tab_name}:", key=f"up_{tab_key}")
+    if uploaded_file is not None:
+        file_bytes = uploaded_file.getvalue()
+        file_info = {
+            "name": uploaded_file.name, 
+            "size": round(uploaded_file.size / 1024, 2), 
+            "user": user_email, 
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "data": file_bytes,
+            "type": uploaded_file.type
+        }
+        if tab_key not in st.session_state.uploaded_files_store:
+            st.session_state.uploaded_files_store[tab_key] = []
+        
+        if not any(f['name'] == uploaded_file.name and f['time'] == file_info['time'] for f in st.session_state.uploaded_files_store[tab_key]):
+            st.session_state.uploaded_files_store[tab_key].append(file_info)
+            st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
 
     st.markdown("---")
     st.markdown("##### 📚 Danh sách tài liệu đã lưu & Tùy chọn (Tải về / Đọc trực tiếp):")
     
     if tab_key in st.session_state.uploaded_files_store and st.session_state.uploaded_files_store[tab_key]:
         for idx, f in enumerate(st.session_state.uploaded_files_store[tab_key]):
-            # Bố trí từng file có thông tin và nút thao tác sát bên cạnh
             f_col1, f_col2, f_col3 = st.columns([3, 1, 1])
             with f_col1:
                 st.markdown(f"📄 **{f['name']}** `({f['size']} KB)`<br><span style='font-size:0.8rem; color:gray;'>Tải bởi: {f['user']} [{f['time']}]</span>", unsafe_allow_html=True)
             with f_col2:
-                # Nút tải file đã upload về máy
                 st.download_button(
                     label="📥 Tải về",
                     data=f['data'],
@@ -193,11 +185,9 @@ def render_upload_download_section(tab_key, tab_name):
                     key=f"dl_file_{tab_key}_{idx}"
                 )
             with f_col3:
-                # Nút bấm để đọc/xem trực tiếp nội dung file ngay trên web
                 if st.button("📖 Đọc", key=f"read_file_{tab_key}_{idx}"):
                     st.session_state[f"view_{tab_key}_{idx}"] = not st.session_state.get(f"view_{tab_key}_{idx}", False)
 
-            # Hiển thị nội dung đọc trực tiếp nếu được bật
             if st.session_state.get(f"view_{tab_key}_{idx}", False):
                 with st.expander(f"🔎 Xem trước nội dung: {f['name']}", expanded=True):
                     try:
@@ -209,7 +199,7 @@ def render_upload_download_section(tab_key, tab_name):
                         elif "image" in f['type']:
                             st.image(f['data'], caption=f['name'])
                         else:
-                            st.info("Trình duyệt hỗ trợ xem trực tiếp với định dạng Văn bản, Excel, Hình ảnh và CSV. Bạn có thể nhấn 'Tải về' để xem đầy đủ các định dạng khác.")
+                            st.info("Trình duyệt hỗ trợ xem trực tiếp với định dạng Văn bản, Excel, Hình ảnh và CSV. Bạn có thể nhấn 'Tải về' để xem.")
                     except Exception as e:
                         st.error(f"Không thể đọc trực tiếp file này: {e}")
             st.markdown("---")
@@ -217,7 +207,7 @@ def render_upload_download_section(tab_key, tab_name):
         st.write("_Chưa có tài liệu nào được tải lên._")
 
 # ==========================================
-# ĐIỀU HƯỚNG NHÁNH CHÍNH
+# ĐIỀU HƯỚNG NHÁNH CHÍNH (TÔ MÀU SẴN)
 # ==========================================
 main_tab1, main_tab2 = st.tabs([
     "📌 Nhánh 1: MPM (Quản trị & Tri thức)", 
