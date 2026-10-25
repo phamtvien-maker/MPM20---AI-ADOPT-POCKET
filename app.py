@@ -3,75 +3,76 @@ import pandas as pd
 import io
 from datetime import datetime
 
-# Cấu hình giao diện trang web
+# Cấu hình giao diện trang web (Layout rộng tối đa)
 st.set_page_config(
     page_title="MPM20 - AI Adopt Pocket",
     page_icon="🚀",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# GIAO DIỆN CSS: TÔ MÀU SẴN + HIỆU ỨNG 3D NỔI BẬT CHO 2 TAB
+# CSS TỐI ƯU KHÔNG GIAN & TÔ MÀU TRỰC TIẾP CHO 2 TAB CHÍNH
 # ==========================================
 st.markdown("""
     <style>
+    /* 1. Thu gọn khoảng trống lề trên cùng của trang web */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 100% !important;
+    }
+    
+    /* Ẩn header mặc định của Streamlit để tiết kiệm không gian */
+    header {visibility: hidden;}
+    
     .main {
         background-color: #0e1117;
         color: #e2e8f0;
     }
-    
-    /* Cấu hình tổng thể cho các Tab chính */
-    div[data-baseweb="tab-list"] {
-        gap: 12px !important;
-        padding: 5px 0px !important;
+
+    /* 2. Ép kiểu và tô màu 3D trực tiếp cho 2 Tab chính (Nhánh 1 & Nhánh 2) */
+    /* Sử dụng attribute selector của Streamlit tabs để bắt chính xác tab cấp 1 */
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] {
+        gap: 15px !important;
+        background-color: transparent !important;
+        padding: 5px !important;
     }
 
-    /* Target trực tiếp nút Tab 1 (Nhánh 1) - Xanh lá nhạt + Hiệu ứng 3D */
-    div[data-baseweb="tab-list"] button:nth-child(1) {
-        background: linear-gradient(145deg, #dcfce7, #bbf7d0) !important;
+    /* Tab Nhánh 1: Màu Xanh lá nhạt 3D */
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(1) {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
         color: #14532d !important;
-        font-weight: 800 !important;
-        font-size: 1.05rem !important;
-        border-radius: 10px 10px 0px 0px !important;
-        border: 2px solid #86efac !important;
-        box-shadow: 0px 6px 10px rgba(34, 197, 94, 0.25), inset 0px 1px 0px rgba(255, 255, 255, 0.8) !important;
-        transition: all 0.2s ease-in-out !important;
+        font-weight: 900 !important;
+        font-size: 1.1rem !important;
+        padding: 10px 25px !important;
+        border-radius: 12px 12px 0px 0px !important;
+        border: 2px solid #4ade80 !important;
+        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3) !important;
     }
 
-    /* Target trực tiếp nút Tab 2 (Nhánh 2) - Xanh dương nhạt + Hiệu ứng 3D */
-    div[data-baseweb="tab-list"] button:nth-child(2) {
-        background: linear-gradient(145deg, #e0f2fe, #bae6fd) !important;
+    /* Tab Nhánh 2: Màu Xanh dương nhạt 3D */
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button:nth-of-type(2) {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
         color: #0c4a6e !important;
-        font-weight: 800 !important;
-        font-size: 1.05rem !important;
-        border-radius: 10px 10px 0px 0px !important;
-        border: 2px solid #7dd3fc !important;
-        box-shadow: 0px 6px 10px rgba(2, 132, 199, 0.25), inset 0px 1px 0px rgba(255, 255, 255, 0.8) !important;
-        transition: all 0.2s ease-in-out !important;
+        font-weight: 900 !important;
+        font-size: 1.1rem !important;
+        padding: 10px 25px !important;
+        border-radius: 12px 12px 0px 0px !important;
+        border: 2px solid #38bdf8 !important;
+        box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3) !important;
     }
 
-    /* Khi di chuột (Hover) tạo hiệu ứng nhô cao 3D */
-    div[data-baseweb="tab-list"] button:nth-child(1):hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0px 8px 15px rgba(34, 197, 94, 0.4) !important;
-    }
-    div[data-baseweb="tab-list"] button:nth-child(2):hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0px 8px 15px rgba(2, 132, 199, 0.4) !important;
-    }
-
-    /* Trang thái Active khi được bấm chọn */
-    div[data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(1) {
-        background: linear-gradient(145deg, #16a34a, #15803d) !important;
+    /* Trạng thái khi được chọn (Active) */
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(1) {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
         color: #ffffff !important;
-        border-color: #22c55e !important;
-        box-shadow: 0px 8px 15px rgba(22, 163, 74, 0.5) !important;
+        box-shadow: 0 6px 15px rgba(22, 163, 74, 0.5) !important;
     }
-    div[data-baseweb="tab-list"] button[aria-selected="true"]:nth-child(2) {
-        background: linear-gradient(145deg, #0284c7, #0369a1) !important;
+    div.stTabs > div:first-child > div[data-baseweb="tab-list"] > button[aria-selected="true"]:nth-of-type(2) {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
         color: #ffffff !important;
-        border-color: #38bdf8 !important;
-        box-shadow: 0px 8px 15px rgba(2, 132, 199, 0.5) !important;
+        box-shadow: 0 6px 15px rgba(2, 132, 199, 0.5) !important;
     }
 
     /* Khung chat thảo luận */
@@ -150,17 +151,18 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# SAU KHI ĐĂNG NHẬP THÀNH CÔNG
+# SAU KHI ĐĂNG NHẬP THÀNH CÔNG (TỐI ƯU KHÔNG GIAN LÊN TRÊN)
 # ==========================================
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
 
-hcol1, hcol2, hcol3 = st.columns([3, 3, 2])
-with hcol1:
-    st.markdown(f"👤 **Thành viên:** `{user_email}`")
-with hcol2:
-    st.markdown(f"🟢 **Online:** `{len(st.session_state.active_users)} người` | 📊 **Truy cập hôm nay:** `{st.session_state.daily_visits} lượt`")
-with hcol3:
+# Đưa Header, Tiêu đề và Thống kê lên sát mép trên cùng của màn hình
+top_col1, top_col2, top_col3 = st.columns([3, 3, 1])
+with top_col1:
+    st.markdown("### ⚡ MPM20 - Dashboard Chuyên Sâu")
+with top_col2:
+    st.markdown(f"👤 `{user_email}` | 🟢 Online: **{len(st.session_state.active_users)}** | 📊 Hôm nay: **{st.session_state.daily_visits}**")
+with top_col3:
     if st.button("🚪 Đăng xuất", use_container_width=True):
         if user_email in st.session_state.active_users:
             st.session_state.active_users.remove(user_email)
@@ -168,11 +170,10 @@ with hcol3:
         st.session_state.user_email = ""
         st.rerun()
 
-st.markdown("---")
-st.markdown("## ⚡ MPM20 - Dashboard Quản Trị Dự Án Chuyên Sâu")
+st.markdown("<hr style='margin: 0px 0px 10px 0px; border-color: #30363d;'>", unsafe_allow_html=True)
 
 # ==========================================
-# HÀM HỖ TRỢ UPLOAD & ĐỌC / MỞ TÀI LIỆU CỤ THỂ
+# HÀM HỖ TRỢ UPLOAD & ĐỌC / MỞ TÀI LIỆU
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
     st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
@@ -205,15 +206,14 @@ def render_upload_download_section(tab_key, tab_name):
             with f_col1:
                 st.markdown(f"📄 **{f['name']}** `({f['size']} KB)`<br><span style='font-size:0.8rem; color:gray;'>Tải bởi: {f['user']} [{f['time']}]</span>", unsafe_allow_html=True)
             with f_col2:
-                # Nút tải xuống để mở trực tiếp bằng phần mềm mặc định trên máy (Excel, Word, Adobe...)
                 st.download_button(
-                    label="💻 Tải về & Mở bằng App máy",
+                    label="💻 Tải về & Mở App máy",
                     data=f['data'],
                     file_name=f['name'],
                     key=f"dl_file_{tab_key}_{idx}"
                 )
             with f_col3:
-                if st.button("📖 Xem nhanh trên Web", key=f"read_file_{tab_key}_{idx}"):
+                if st.button("📖 Xem nhanh", key=f"read_file_{tab_key}_{idx}"):
                     st.session_state[f"view_{tab_key}_{idx}"] = not st.session_state.get(f"view_{tab_key}_{idx}", False)
 
             if st.session_state.get(f"view_{tab_key}_{idx}", False):
@@ -227,15 +227,15 @@ def render_upload_download_section(tab_key, tab_name):
                         elif "image" in f['type']:
                             st.image(f['data'], caption=f['name'])
                         else:
-                            st.info("💡 Để xem và chỉnh sửa file này bằng phần mềm chuyên dụng (Excel, Word, AutoCAD, Powerpoint...) trên máy tính của bạn, vui lòng bấm nút **'💻 Tải về & Mở bằng App máy'** sát bên cạnh.")
+                            st.info("💡 Vui lòng bấm nút **'💻 Tải về & Mở App máy'** để xem file bằng phần mềm chuyên dụng (Excel, Word, AutoCAD...) trên máy tính.")
                     except Exception as e:
-                        st.error(f"Không thể đọc trực tiếp file này trên web: {e}")
+                        st.error(f"Không thể đọc file này: {e}")
             st.markdown("---")
     else:
         st.write("_Chưa có tài liệu nào được tải lên._")
 
 # ==========================================
-# ĐIỀU HƯỚNG NHÁNH CHÍNH (ĐÃ TÔ MÀU 3D ĐẶC BIỆT)
+# ĐIỀU HƯỚNG 2 NHÁNH CHÍNH (TÔ MÀU SẴN & HIỆU ỨNG 3D)
 # ==========================================
 main_tab1, main_tab2 = st.tabs([
     "📌 Nhánh 1: MPM (Quản trị & Tri thức)", 
