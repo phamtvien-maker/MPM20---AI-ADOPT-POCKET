@@ -162,7 +162,9 @@ if not st.session_state.logged_in:
 # ==========================================
 # SAU KHI ĐĂNG NHẬP THÀNH CÔNG
 # ==========================================
-st.query_params["logged_in_user"] = user_email
+# Sửa lại đoạn gán query params an toàn hơn:
+if "user_email" in st.session_state:
+    st.query_params["logged_in_user"] = st.session_state["user_email"]
 # ==========================================
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
