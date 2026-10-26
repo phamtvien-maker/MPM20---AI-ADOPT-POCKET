@@ -184,7 +184,7 @@ def render_upload_download_section(tab_key, tab_name):
     st.markdown("##### 📤 Upload tài liệu lên hệ thống")
     uploaded_file = st.file_uploader(f"Chọn file từ máy tính cho {tab_name}:", key=f"up_{tab_key}")
     if uploaded_file is not None:
-          # --- THÊM ĐOẠN NÀY ĐỂ ĐẨY FILE LÊN CLOUDINARY ---
+        # --- ĐỒNG BỘ LÊN CLOUDINARY VĨNH VIỄN ---
         with st.spinner("Đang đồng bộ file lên Cloudinary..."):
             try:
                 resource_type = "image" if uploaded_file.type.startswith("image/") else "raw"
@@ -199,17 +199,13 @@ def render_upload_download_section(tab_key, tab_name):
                 st.success(f"✅ Đã lưu vĩnh viễn file {uploaded_file.name} lên Cloud!")
             except Exception as e:
                 st.error(f"❌ Lỗi đồng bộ Cloud: {e}")
-        # ------------------------------------------------
+        # ----------------------------------------
 
         file_bytes = uploaded_file.getvalue()
         file_info = {
             "name": uploaded_file.name,
-            ...
-        file_bytes = uploaded_file.getvalue()
-        file_info = {
-            "name": uploaded_file.name, 
-            "size": round(uploaded_file.size / 1024, 2), 
-            "user": user_email, 
+            "size": round(uploaded_file.size / 1024, 2),
+            "user": user_email,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "data": file_bytes,
             "type": uploaded_file.type
