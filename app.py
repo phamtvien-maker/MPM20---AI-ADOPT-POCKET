@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-
+import cloud_sync
 # Cấu hình kết nối Cloudinary bảo mật từ Streamlit Secrets
 cloudinary.config(
     cloud_name = st.secrets["CLOUDINARY_CLOUD_NAME"],
@@ -181,6 +181,8 @@ st.markdown("<hr style='margin: 0px 0px 10px 0px; border-color: #30363d;'>", uns
 # HÀM HỖ TRỢ UPLOAD & ĐỌC / MỞ TÀI LIỆU
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
+    # --- CHÈN DÒNG NÀY VÀO NGAY ĐẦU HÀM ---
+    cloud_sync.sync_files_from_cloudinary(tab_key)
     st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
     
     st.markdown("##### 📤 Upload tài liệu lên hệ thống")
