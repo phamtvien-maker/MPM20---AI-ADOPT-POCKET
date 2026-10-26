@@ -23,10 +23,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-# Tự động khôi phục phiên đăng nhập từ URL khi Refresh (F5)
-if "logged_in_user" in st.query_params:
+# Tự động khôi phục phiên đăng nhập từ URL ngay khi tải lại trang (F5)
+if "logged_in_user" in st.query_params and not st.session_state.get("authenticated", False):
     st.session_state["authenticated"] = True
-    st.session_state["user_email"] = st.query_params["logged_in_user"]
+    # Lưu phiên vào URL để chống mất trạng thái khi Refresh
+st.query_params["logged_in_user"] = st.session_state["user_email"]
 # ==========================================
 # CSS ĐẶC BIỆT: ÉP BUỘC TÔ MÀU 2 TAB CHÍNH
 # ==========================================
@@ -175,13 +176,13 @@ with top_col1:
 with top_col2:
     st.markdown(f"👤 `{user_email}` | 🟢 Online: **{len(st.session_state.active_users)}** | 📊 Hôm nay: **{st.session_state.daily_visits}**")
 with top_col3:
-    if st.button("🚪 Đăng xuất", use_container_width=True):
-        st.query_params.clear()
-        if user_email in st.session_state.active_users:
-            st.session_state.active_users.remove(user_email)
-        st.session_state.logged_in = False
-        st.session_state.user_email = ""
-        st.rerun()
+    if st.button("Đăng xuất", use_container_width=True):
+            st.query_params.clear()  # <-- CHÈN DÒNG NÀY VÀO DÒNG 180
+            if user_email in st.session_state.active_users:
+                st.session_state.active_users.remove(user_email)
+            st.session_state.logged_in = False
+            st.session_state.user_email = ""
+            st.rerun()
 
 st.markdown("<hr style='margin: 0px 0px 10px 0px; border-color: #30363d;'>", unsafe_allow_html=True)
 
