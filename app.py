@@ -1,3 +1,14 @@
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# Cấu hình kết nối Cloudinary bảo mật từ Streamlit Secrets
+cloudinary.config(
+    cloud_name = st.secrets["CLOUDINARY_CLOUD_NAME"],
+    api_key = st.secrets["CLOUDINARY_API_KEY"],
+    api_secret = st.secrets["CLOUDINARY_API_SECRET"],
+    secure = True
+)
 import streamlit as st
 import pandas as pd
 import io
@@ -173,6 +184,27 @@ def render_upload_download_section(tab_key, tab_name):
     st.markdown("##### 📤 Upload tài liệu lên hệ thống")
     uploaded_file = st.file_uploader(f"Chọn file từ máy tính cho {tab_name}:", key=f"up_{tab_key}")
     if uploaded_file is not None:
+          # --- THÊM ĐOẠN NÀY ĐỂ ĐẨY FILE LÊN CLOUDINARY ---
+        with st.spinner("Đang đồng bộ file lên Cloudinary..."):
+            try:
+                resource_type = "image" if uploaded_file.type.startswith("image/") else "raw"
+                response = cloudinary.uploader.upload(
+                    uploaded_file,
+                    folder="MPM20_AI_Storage",
+                    public_id=uploaded_file.name,
+                    resource_type=resource_type,
+                    overwrite=True
+                )
+                file_url = response.get('secure_url')
+                st.success(f"✅ Đã lưu vĩnh viễn file {uploaded_file.name} lên Cloud!")
+            except Exception as e:
+                st.error(f"❌ Lỗi đồng bộ Cloud: {e}")
+        # ------------------------------------------------
+
+        file_bytes = uploaded_file.getvalue()
+        file_info = {
+            "name": uploaded_file.name,
+            ...
         file_bytes = uploaded_file.getvalue()
         file_info = {
             "name": uploaded_file.name, 
