@@ -5,7 +5,7 @@ except ImportError:
     pass
 
 def sync_files_from_cloudinary(tab_key="doc"):
-    """Hàm tự động quét và kéo toàn bộ file từ thư mục Cloudinary về giao diện"""
+    """Hàm tự động quét và kéo toàn bộ file (cả raw và image) từ Cloudinary về giao diện"""
     if "uploaded_files_store" not in st.session_state:
         st.session_state.uploaded_files_store = {}
         
@@ -15,16 +15,25 @@ def sync_files_from_cloudinary(tab_key="doc"):
     # Chỉ gọi API đồng bộ 1 lần duy nhất khi khởi động phiên làm việc
     if not st.session_state.get(f"synced_{tab_key}", False):
         try:
-            # Lấy danh sách tài liệu từ Cloudinary (hỗ trợ cả file raw và image)
-            result = cloudinary.api.resources(
-                type="upload", 
-                prefix="MPM20_AI_Storage", 
-                max_results=50
-            )
-            resources = result.get("resources", [])
+            all_resources = []
+            
+            # Quét cả tài liệu dạng raw (pdf, pptx, docx...)
+            try:
+                res_raw = cloudinary.api.resources(type="upload", resource_type="raw", prefix="MPM20_AI_Storage", max_results=50)
+                all_resources.extend(res_raw.get("resources", []))
+            except Exception:
+                pass
+                
+            # Quét cả tài liệu dạng image (png, jpg...)
+            try:
+                res_img = cloudinary.api.resources(type="upload", resource_type="image", prefix="MPM20_AI_Storage", max_results=50)
+                all_resources.extend(res_img.get("resources", []))
+            except Exception:
+                pass
+                
             st.session_state.uploaded_files_store[tab_key] = []
             
-            for res in resources:
+            for res in all_resources:
                 public_id = res.get("public_id", "")
                 file_name = public_id.replace("MPM20_AI_Storage/", "")
                 file_url = res.get("secure_url")
@@ -39,6 +48,7 @@ def sync_files_from_cloudinary(tab_key="doc"):
                     "data": file_url,
                     "type": file_format
                 })
+                
             st.session_state[f"synced_{tab_key}"] = True
         except Exception as e:
             pass
