@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import io
+from datetime import datetime
+# Cấu hình kết nối Cloudinary bảo mật từ Streamlit Secrets
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
@@ -9,10 +14,7 @@ cloudinary.config(
     api_secret = st.secrets["CLOUDINARY_API_SECRET"],
     secure = True
 )
-import streamlit as st
-import pandas as pd
-import io
-from datetime import datetime
+
 
 # Cấu hình giao diện trang web
 st.set_page_config(
