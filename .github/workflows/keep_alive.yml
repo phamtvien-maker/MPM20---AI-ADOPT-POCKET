@@ -1,0 +1,16 @@
+name: Keep Streamlit App Alive
+
+on:
+  schedule:
+    # Tự động truy cập mỗi 6 giờ một lần
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: |
+          curl -sS https://mpm20---ai-adopt-pocket-2dappxnb8dp5bxa3tkvitq.streamlit.app/ > /dev/null
+          echo "Pinged Streamlit App successfully at $(date)"
