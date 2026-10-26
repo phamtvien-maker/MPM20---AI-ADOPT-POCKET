@@ -163,8 +163,7 @@ if not st.session_state.logged_in:
 # SAU KHI ĐĂNG NHẬP THÀNH CÔNG
 # ==========================================
 st.query_params["logged_in_user"] = user_email
-=======
-
+# ==========================================
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
 
