@@ -15,6 +15,7 @@ def sync_files_from_cloudinary(tab_key="doc"):
     # Chỉ gọi API đồng bộ 1 lần duy nhất khi khởi động phiên làm việc
     if not st.session_state.get(f"synced_{tab_key}", False):
         try:
+            # Lấy danh sách tài liệu từ Cloudinary (hỗ trợ cả file raw và image)
             result = cloudinary.api.resources(
                 type="upload", 
                 prefix="MPM20_AI_Storage", 
@@ -24,9 +25,11 @@ def sync_files_from_cloudinary(tab_key="doc"):
             st.session_state.uploaded_files_store[tab_key] = []
             
             for res in resources:
-                file_name = res.get("public_id").replace("MPM20_AI_Storage/", "")
+                public_id = res.get("public_id", "")
+                file_name = public_id.replace("MPM20_AI_Storage/", "")
                 file_url = res.get("secure_url")
                 file_size = round(res.get("bytes", 0) / 1024, 2)
+                file_format = res.get("format", "file")
                 
                 st.session_state.uploaded_files_store[tab_key].append({
                     "name": file_name,
@@ -34,7 +37,7 @@ def sync_files_from_cloudinary(tab_key="doc"):
                     "user": "Cloud Sync",
                     "time": res.get("created_at", "")[:19].replace("T", " "),
                     "data": file_url,
-                    "type": res.get("format", "file")
+                    "type": file_format
                 })
             st.session_state[f"synced_{tab_key}"] = True
         except Exception as e:
