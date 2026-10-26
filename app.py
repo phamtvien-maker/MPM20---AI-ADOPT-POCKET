@@ -27,7 +27,9 @@ st.set_page_config(
 if "logged_in_user" in st.query_params and not st.session_state.get("authenticated", False):
     st.session_state["authenticated"] = True
     # Lưu phiên vào URL để chống mất trạng thái khi Refresh
-st.query_params["logged_in_user"] = st.session_state["user_email"]
+# Kiểm tra an toàn trước khi gán query_params để tránh lỗi KeyError khi khởi động
+if "user_email" in st.session_state and st.session_state["user_email"]:
+    st.query_params["logged_in_user"] = st.session_state["user_email"]
 # ==========================================
 # CSS ĐẶC BIỆT: ÉP BUỘC TÔ MÀU 2 TAB CHÍNH
 # ==========================================
