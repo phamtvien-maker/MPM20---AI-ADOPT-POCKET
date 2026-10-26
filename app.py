@@ -208,7 +208,7 @@ def render_upload_download_section(tab_key, tab_name):
             "name": uploaded_file.name,
             "size": round(uploaded_file.size / 1024, 2),
             "user": user_email,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "time": (datetime.utcnow() + timedelta(hours=7)).strftime("%Y-%m-%d %H:%M:%S"),
             "data": file_bytes,
             "type": uploaded_file.type
         }
