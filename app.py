@@ -14,7 +14,10 @@ cloudinary.config(
     api_secret = st.secrets["CLOUDINARY_API_SECRET"],
     secure = True
 )
-
+# Tự động khôi phục trạng thái đăng nhập từ URL ngay khi tải lại trang (F5)
+if "logged_in_user" in st.query_params:
+    st.session_state["logged_in"] = True
+    st.session_state["user_email"] = st.query_params["logged_in_user"]
 
 # Cấu hình giao diện trang web
 st.set_page_config(
