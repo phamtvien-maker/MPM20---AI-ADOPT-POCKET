@@ -177,61 +177,80 @@ st.markdown(
 
 
 # ==========================================
-# HÀM HỖ TRỢ UPLOAD & ĐỌC TÀI LIỆU
+# HÀM HỖ TRỢ UPLOAD & ĐỌC TÀI LIỆU (ĐÃ CÔ LẬP THEO TAB_KEY)
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
+  # Đồng bộ Cloudinary riêng cho tab_key này
   cloud_sync.sync_files_from_cloudinary(tab_key)
+
   st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
   st.markdown("##### 📤 Upload tài liệu lên hệ thống")
 
+  # Đảm bảo key của file_uploader hoàn toàn độc lập dựa vào tab_key
   uploaded_file = st.file_uploader(
       f"Chọn file từ máy tính cho {tab_name}:", key=f"up_{tab_key}"
   )
+
   if uploaded_file is not None:
-    with st.spinner("Đang đồng bộ file lên Cloudinary..."):
-      try:
-        resource_type = (
-            "image" if uploaded_file.type.startswith("image/") else "raw"
-        )
-        cloudinary.uploader.upload(
-            uploaded_file,
-            folder="MPM20_AI_Storage",
-            public_id=uploaded_file.name,
-            resource_type=resource_type,
-            overwrite=True,
-        )
-        st.success(
-            f"✅ Đã lưu vĩnh viễn file {uploaded_file.name} lên Cloud!"
-        )
-      except Exception as e:
-        st.error(f"❌ Lỗi đồng bộ Cloud: {e}")
+    # Tránh xử lý lặp lại nếu file đã được upload ở lượt chạy trước trong session này
+    current_file_id = f"{uploaded_file.name}_{uploaded_file.size}"
+    last_uploaded_id = st.session_state.get(f"last_up_{tab_key}", "")
 
-    file_bytes = uploaded_file.getvalue()
-    file_info = {
-        "name": uploaded_file.name,
-        "size": round(uploaded_file.size / 1024, 2),
-        "user": user_email,
-        "time": (datetime.utcnow() + timedelta(hours=7)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ),
-        "data": file_bytes,
-        "type": uploaded_file.type,
-    }
+    if current_file_id != last_uploaded_id:
+      with st.spinner("Đang đồng bộ file lên Cloudinary..."):
+        try:
+          resource_type = (
+              "image" if uploaded_file.type.startswith("image/") else "raw"
+          )
+          cloudinary.uploader.upload(
+              uploaded_file,
+              folder=f"MPM20_AI_Storage/{tab_key}",  # Phân chia thư mục Cloudinary theo từng tab nếu cần
+              public_id=uploaded_file.name,
+              resource_type=resource_type,
+              overwrite=True,
+          )
+          st.success(
+              f"✅ Đã lưu vĩnh viễn file {uploaded_file.name} lên Cloud cho"
+              f" {tab_name}!"
+          )
+        except Exception as e:
+          st.error(f"❌ Lỗi đồng bộ Cloud: {e}")
 
-    store = st.session_state.uploaded_files_store[tab_key]
-    if not any(
-        f["name"] == uploaded_file.name and f["time"] == file_info["time"]
-        for f in store
-    ):
-      store.append(file_info)
-      st.success(f"✅ Đã lưu file **{uploaded_file.name}** thành công!")
+      file_bytes = uploaded_file.getvalue()
+      file_info = {
+          "name": uploaded_file.name,
+          "size": round(uploaded_file.size / 1024, 2),
+          "user": user_email,
+          "time": (datetime.utcnow() + timedelta(hours=7)).strftime(
+              "%Y-%m-%d %H:%M:%S"
+          ),
+          "data": file_bytes,
+          "type": uploaded_file.type,
+      }
+
+      # Đảm bảo cấu trúc lưu trữ tồn tại
+      if tab_key not in st.session_state.uploaded_files_store:
+        st.session_state.uploaded_files_store[tab_key] = []
+
+      store = st.session_state.uploaded_files_store[tab_key]
+
+      # Thêm vào kho của riêng tab_key này
+      if not any(f["name"] == uploaded_file.name for f in store):
+        store.append(file_info)
+        st.success(f"✅ Đã lưu file **{uploaded_file.name}** vào tab {tab_name}!")
+
+      st.session_state[f"last_up_{tab_key}"] = current_file_id
 
   st.markdown("---")
-  st.markdown("##### 📚 Danh sách tài liệu đã lưu & Tùy chọn đọc/mở:")
+  st.markdown(
+      f"##### 📚 Danh sách tài liệu đã lưu tại {tab_name} & Tùy chọn đọc/mở:"
+  )
 
-  store = st.session_state.uploaded_files_store.get(tab_key, [])
-  if store:
-    for idx, f in enumerate(store):
+  # Lấy dữ liệu ĐÚNG CỦA RIÊNG tab_key hiện tại
+  current_tab_store = st.session_state.uploaded_files_store.get(tab_key, [])
+
+  if current_tab_store:
+    for idx, f in enumerate(current_tab_store):
       f_col1, f_col2, f_col3 = st.columns([3, 1, 1])
       with f_col1:
         st.markdown(
@@ -275,7 +294,7 @@ def render_upload_download_section(tab_key, tab_name):
             st.error(f"Không thể đọc file này: {e}")
       st.markdown("---")
   else:
-    st.write("_Chưa có tài liệu nào được tải lên._")
+    st.write(f"_Chưa có tài liệu nào được tải lên trong tab {tab_name}._")
 
 
 # ==========================================
