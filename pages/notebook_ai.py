@@ -17,7 +17,7 @@ else:
   st.error("❌ Vui lòng cấu hình GEMINI_API_KEY trong Secrets storage của Streamlit!")
   st.stop()
 
-# Khởi tạo mô hình Gemini chuẩn và ổn định nhất
+# Khởi tạo mô hình Gemini chuẩn tương thích
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # Khởi tạo lịch sử chat
@@ -49,7 +49,6 @@ if selected_doc and selected_source.startswith("📄 Tài liệu vừa chọn"):
     file_data = selected_doc.get("data")
     file_name = selected_doc.get("name", "")
 
-    # Xử lý an toàn cho cả dữ liệu dạng bytes lẫn chuỗi str
     if isinstance(file_data, bytes):
       try:
         context_text = file_data.decode("utf-8", errors="ignore")
