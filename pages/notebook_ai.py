@@ -26,14 +26,38 @@ if "notebook_chat_history" not in st.session_state:
 
 # Nguồn dữ liệu cho AI ở Sidebar
 st.sidebar.markdown("### 📚 Nguồn tài liệu cho AI")
+
+# Kiểm tra xem có file nào vừa được bấm nút "Phân tích AI" từ trang chủ truyền sang không
+selected_doc = st.session_state.get("selected_doc_for_ai", None)
+
+source_options = [
+    "Sử dụng toàn bộ kho tài liệu hệ thống MPM20",
+    "Tải file mới trực tiếp cho AI",
+]
+if selected_doc:
+  source_options.insert(
+      0, f"📄 Tài liệu vừa chọn: {selected_doc.get('name')}"
+  )
+
 selected_source = st.sidebar.selectbox(
-    "Chọn nguồn dữ liệu phân tích:",
-    ["Tải file mới trực tiếp cho AI", "Sử dụng kho tài liệu hệ thống MPM20"],
+    "Chọn nguồn dữ liệu phân tích:", source_options
 )
 
 context_text = ""
 
-if selected_source == "Tải file mới trực tiếp cho AI":
+if selected_doc and selected_source.startswith("📄 Tài liệu vừa chọn"):
+  try:
+    file_data = selected_doc.get("data")
+    file_name = selected_doc.get("name", "")
+    if file_name.endswith((".txt", ".py", ".csv", ".md", ".json", ".ppt")):
+      context_text = file_data.decode("utf-8", errors="ignore")
+    else:
+      context_text = f"[Đã nạp file tài liệu: {file_name}]"
+    st.sidebar.success(f"✅ Đã kết nối với file: {file_name}")
+  except Exception as e:
+    st.sidebar.error(f"Lỗi đọc file: {e}")
+
+elif selected_source == "Tải file mới trực tiếp cho AI":
   uploaded_ai_file = st.sidebar.file_uploader(
       "Tải tài liệu (PDF, TXT, CSV, Python...)",
       type=["pdf", "txt", "csv", "py", "md"],
@@ -48,7 +72,6 @@ if selected_source == "Tải file mới trực tiếp cho AI":
       else:
         with open(uploaded_ai_file.name, "wb") as f:
           f.write(uploaded_ai_file.getbuffer())
-        g_file = genai.upload_file(uploaded_ai_file.name)
         context_text = f"[Đã nạp file đa phương tiện: {uploaded_ai_file.name}]"
         st.sidebar.success(f"✅ Đã nạp file {uploaded_ai_file.name} lên hệ thống")
     except Exception as e:
@@ -56,22 +79,49 @@ if selected_source == "Tải file mới trực tiếp cho AI":
 
 else:
   st.sidebar.info(
-      "💡 AI đang tự động tổng hợp thông tin từ các kho lưu trữ trong ứng dụng"
-      " MPM20."
+      "💡 AI đang tự động quét và tổng hợp toàn bộ file từ mọi tab trong hệ"
+      " thống MPM20."
   )
-  if "uploaded_files_store" in st.session_state:
-    all_files_content = []
-    for tab_k, files in st.session_state.uploaded_files_store.items():
-      for f in files:
-        if isinstance(f.get("data"), bytes):
-          try:
-            all_files_content.append(
-                f"--- File: {f['name']} (Tab: {tab_k}) ---\n"
-                f"{f['data'].decode('utf-8', errors='ignore')}"
-            )
-          except Exception:
-            pass
+  all_files_content = []
+
+  # Quét toàn bộ các kho lưu trữ file trong session_state của ứng dụng
+  # (Hỗ trợ chia sẻ dữ liệu giữa app.py và các trang pages/)
+  for tab_k in [
+      "doc",
+      "exams",
+      "disc",
+      "insight",
+      "appcode",
+      "example",
+      "pm",
+      "qs",
+  ]:
+    # Lấy dữ liệu trực tiếp từ session state hoặc khôi phục từ Cloudinary nếu cần
+    files_list = st.session_state.get("uploaded_files_store", {}).get(tab_k, [])
+    for f in files_list:
+      if isinstance(f.get("data"), bytes):
+        try:
+          decoded_content = f["data"].decode("utf-8", errors="ignore")
+          all_files_content.append(
+              f"--- Kho: {tab_k.upper()} | File: {f['name']} ---\n"
+              f"{decoded_content}"
+          )
+        except Exception:
+          all_files_content.append(
+              f"--- Kho: {tab_k.upper()} | File: {f['name']} (Định dạng nhị"
+              " phân) ---"
+          )
+
+  if all_files_content:
     context_text = "\n\n".join(all_files_content)
+    st.sidebar.success(
+        f"✅ Đã tổng hợp thành công tài liệu từ hệ thống MPM20!"
+    )
+  else:
+    st.sidebar.warning(
+        "⚠️ Chưa tìm thấy file nào trong hệ thống. Vui lòng upload file ở trang"
+        " chính."
+    )
 
 # Hiển thị lịch sử trò chuyện
 for message in st.session_state.notebook_chat_history:
@@ -93,7 +143,7 @@ if user_prompt := st.chat_input(
       try:
         full_prompt = f"""
         Bạn là một Trợ lý AI chuyên gia quản lý dự án (PM) và quản lý chi phí (QS) cao cấp, thông minh giống như Google NotebookLM.
-        Dưới đây là nguồn tài liệu được cung cấp:
+        Dưới đây là nguồn tài liệu được cung cấp từ hệ thống MPM20:
         ====================
         {context_text}
         ====================
