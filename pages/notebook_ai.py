@@ -17,8 +17,8 @@ else:
   st.error("❌ Vui lòng cấu hình GEMINI_API_KEY trong Secrets storage của Streamlit!")
   st.stop()
 
-# Khởi tạo mô hình Gemini thông minh
-model = genai.GenerativeModel("gemini-1.5-pro")
+# Khởi tạo mô hình Gemini chuẩn và ổn định nhất
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # Khởi tạo lịch sử chat
 if "notebook_chat_history" not in st.session_state:
@@ -27,7 +27,6 @@ if "notebook_chat_history" not in st.session_state:
 # Nguồn dữ liệu cho AI ở Sidebar
 st.sidebar.markdown("### 📚 Nguồn tài liệu cho AI")
 
-# Kiểm tra xem có file nào vừa được bấm nút "Phân tích AI" từ trang chủ truyền sang không
 selected_doc = st.session_state.get("selected_doc_for_ai", None)
 
 source_options = [
@@ -49,10 +48,18 @@ if selected_doc and selected_source.startswith("📄 Tài liệu vừa chọn"):
   try:
     file_data = selected_doc.get("data")
     file_name = selected_doc.get("name", "")
-    if file_name.endswith((".txt", ".py", ".csv", ".md", ".json", ".ppt")):
-      context_text = file_data.decode("utf-8", errors="ignore")
+
+    # Xử lý an toàn cho cả dữ liệu dạng bytes lẫn chuỗi str
+    if isinstance(file_data, bytes):
+      try:
+        context_text = file_data.decode("utf-8", errors="ignore")
+      except Exception:
+        context_text = f"[File nhị phân: {file_name}]"
+    elif isinstance(file_data, str):
+      context_text = file_data
     else:
-      context_text = f"[Đã nạp file tài liệu: {file_name}]"
+      context_text = str(file_data)
+
     st.sidebar.success(f"✅ Đã kết nối với file: {file_name}")
   except Exception as e:
     st.sidebar.error(f"Lỗi đọc file: {e}")
@@ -70,22 +77,17 @@ elif selected_source == "Tải file mới trực tiếp cho AI":
         context_text = uploaded_ai_file.getvalue().decode("utf-8")
         st.sidebar.success(f"✅ Đã đọc xong file {uploaded_ai_file.name}")
       else:
-        with open(uploaded_ai_file.name, "wb") as f:
-          f.write(uploaded_ai_file.getbuffer())
-        context_text = f"[Đã nạp file đa phương tiện: {uploaded_ai_file.name}]"
-        st.sidebar.success(f"✅ Đã nạp file {uploaded_ai_file.name} lên hệ thống")
+        context_text = f"[Đã nạp file: {uploaded_ai_file.name}]"
+        st.sidebar.success(f"✅ Đã nạp file {uploaded_ai_file.name}")
     except Exception as e:
       st.sidebar.error(f"Lỗi đọc file: {e}")
 
 else:
   st.sidebar.info(
-      "💡 AI đang tự động quét và tổng hợp toàn bộ file từ mọi tab trong hệ"
-      " thống MPM20."
+      "💡 AI đang tự động quét và tổng hợp toàn bộ file từ hệ thống MPM20."
   )
   all_files_content = []
 
-  # Quét toàn bộ các kho lưu trữ file trong session_state của ứng dụng
-  # (Hỗ trợ chia sẻ dữ liệu giữa app.py và các trang pages/)
   for tab_k in [
       "doc",
       "exams",
@@ -96,27 +98,25 @@ else:
       "pm",
       "qs",
   ]:
-    # Lấy dữ liệu trực tiếp từ session state hoặc khôi phục từ Cloudinary nếu cần
     files_list = st.session_state.get("uploaded_files_store", {}).get(tab_k, [])
     for f in files_list:
-      if isinstance(f.get("data"), bytes):
+      f_data = f.get("data")
+      if f_data:
         try:
-          decoded_content = f["data"].decode("utf-8", errors="ignore")
+          if isinstance(f_data, bytes):
+            decoded_content = f_data.decode("utf-8", errors="ignore")
+          else:
+            decoded_content = str(f_data)
           all_files_content.append(
               f"--- Kho: {tab_k.upper()} | File: {f['name']} ---\n"
               f"{decoded_content}"
           )
         except Exception:
-          all_files_content.append(
-              f"--- Kho: {tab_k.upper()} | File: {f['name']} (Định dạng nhị"
-              " phân) ---"
-          )
+          pass
 
   if all_files_content:
     context_text = "\n\n".join(all_files_content)
-    st.sidebar.success(
-        f"✅ Đã tổng hợp thành công tài liệu từ hệ thống MPM20!"
-    )
+    st.sidebar.success(f"✅ Đã tổng hợp tài liệu từ hệ thống MPM20!")
   else:
     st.sidebar.warning(
         "⚠️ Chưa tìm thấy file nào trong hệ thống. Vui lòng upload file ở trang"
