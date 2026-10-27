@@ -294,7 +294,8 @@ def render_upload_download_section(tab_key, tab_name):
 
   if current_tab_store:
     for idx, f in enumerate(current_tab_store):
-      f_col1, f_col2, f_col3 = st.columns([3, 1, 1])
+      # Chia 4 cột: [Tên file, Nút Phân tích AI, Nút Tải về, Nút Xem nhanh]
+      f_col1, f_col2, f_col3, f_col4 = st.columns([2.5, 1.2, 1.2, 1])
       with f_col1:
         st.markdown(
             f"📄 **{f['name']}** `({f['size']} KB)`<br><span"
@@ -303,14 +304,22 @@ def render_upload_download_section(tab_key, tab_name):
             unsafe_allow_html=True,
         )
       with f_col2:
+        # NÚT PHÂN TÍCH AI ĐẶT KẾ BÊN TÀI LIỆU
+        if st.button("🤖 Phân tích AI", key=f"btn_ai_{tab_key}_{idx}"):
+          st.session_state.selected_doc_for_ai = {
+              "name": f["name"],
+              "data": f["data"],
+          }
+          st.switch_page("pages/notebook_ai.py")
+      with f_col3:
         st.download_button(
-            label="💻 Tải về & Mở App máy",
+            label="💻 Tải về",
             data=f["data"],
             file_name=f["name"],
             key=f"dl_file_{tab_key}_{idx}",
         )
-      with f_col3:
-        if st.button("📖 Xem nhanh", key=f"read_file_{tab_key}_{idx}"):
+      with f_col4:
+        if st.button("📖 Xem", key=f"read_file_{tab_key}_{idx}"):
           view_key = f"view_{tab_key}_{idx}"
           st.session_state[view_key] = not st.session_state.get(view_key, False)
 
@@ -330,8 +339,8 @@ def render_upload_download_section(tab_key, tab_name):
               st.image(f["data"], caption=f["name"])
             else:
               st.info(
-                  "💡 Vui lòng bấm nút **'💻 Tải về & Mở App máy'** để xem file"
-                  " bằng phần mềm chuyên dụng."
+                  "💡 Vui lòng bấm nút **'💻 Tải về'** để xem file bằng phần mềm"
+                  " chuyên dụng."
               )
           except Exception as e:
             st.error(f"Không thể đọc file này: {e}")
