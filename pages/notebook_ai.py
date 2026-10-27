@@ -17,8 +17,29 @@ else:
   st.error("❌ Vui lòng cấu hình GEMINI_API_KEY trong Secrets storage của Streamlit!")
   st.stop()
 
-# Khởi tạo mô hình Gemini chuẩn đầy đủ tiền tố cho SDK mới
-model = genai.GenerativeModel("models/gemini-1.5-flash")
+# Tự động quét và khởi tạo mô hình Gemini khả dụng
+try:
+  available_models = [
+      m.name
+      for m in genai.list_models()
+      if "generateContent" in m.supported_generation_methods
+  ]
+  target_model = next(
+      (
+          m
+          for m in available_models
+          if "gemini-1.5" in m or "gemini-pro" in m
+      ),
+      available_models[0] if available_models else "gemini-pro",
+  )
+  clean_model_name = (
+      target_model.replace("models/", "")
+      if target_model.startswith("models/")
+      else target_model
+  )
+  model = genai.GenerativeModel(clean_model_name)
+except Exception:
+  model = genai.GenerativeModel("gemini-pro")
 
 # Khởi tạo lịch sử chat
 if "notebook_chat_history" not in st.session_state:
