@@ -4,3 +4,4 @@ openpyxl
 requests
 authlib
 cloudinary
+google-generativeai
