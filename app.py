@@ -1,4 +1,6 @@
 import io
+import json
+import urllib.request
 from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
@@ -77,19 +79,7 @@ USER_CREDENTIALS = {
 defaults = {
     "discussions": [],
     "call_status": False,
-    "uploaded_files_store": {
-        k: []
-        for k in [
-            "doc",
-            "exams",
-            "disc",
-            "insight",
-            "appcode",
-            "example",
-            "pm",
-            "qs",
-        ]
-    },
+    "uploaded_files_store": {},
     "active_users": set(),
     "daily_visits": 0,
     "last_visit_date": datetime.now().date(),
@@ -101,11 +91,48 @@ for key, val in defaults.items():
   if key not in st.session_state:
     st.session_state[key] = val
 
-# Reset lượt truy cập theo ngày mới
 today = datetime.now().date()
 if st.session_state.last_visit_date != today:
   st.session_state.daily_visits = 0
   st.session_state.last_visit_date = today
+
+
+# ==========================================
+# HÀM ĐỒNG BỘ LỊCH SỬ CHAT VĨNH VIỄN
+# ==========================================
+def load_discussions_from_cloud():
+  if not st.session_state.get("discussions_loaded", False):
+    try:
+      res = cloudinary.api.resource(
+          "MPM20_AI_Storage/discussions/chat_history.json", resource_type="raw"
+      )
+      url = res.get("secure_url")
+      if url:
+        with urllib.request.urlopen(url) as response:
+          data = json.loads(response.read().decode("utf-8"))
+          st.session_state.discussions = data
+    except Exception:
+      pass
+    st.session_state["discussions_loaded"] = True
+
+
+def save_discussions_to_cloud():
+  try:
+    json_data = json.dumps(st.session_state.discussions, ensure_ascii=False)
+    file_obj = io.BytesIO(json_data.encode("utf-8"))
+    cloudinary.uploader.upload(
+        file_obj,
+        folder="MPM20_AI_Storage/discussions",
+        public_id="chat_history",
+        resource_type="raw",
+        overwrite=True,
+    )
+  except Exception as e:
+    st.error(f"❌ Lỗi lưu lịch sử chat lên Cloud: {e}")
+
+
+# Tự động tải lịch sử chat từ Cloud khi app chạy
+load_discussions_from_cloud()
 
 # ==========================================
 # GIAO DIỆN ĐĂNG NHẬP
@@ -146,7 +173,7 @@ if not st.session_state.logged_in:
   st.stop()
 
 # ==========================================
-# KHU VỰC SAU KHI ĐĂNG NHẬP
+# SAU KHI ĐĂNG NHẬP
 # ==========================================
 user_email = st.session_state.user_email
 st.session_state.active_users.add(user_email)
@@ -177,22 +204,22 @@ st.markdown(
 
 
 # ==========================================
-# HÀM HỖ TRỢ UPLOAD & ĐỌC TÀI LIỆU (ĐÃ CÔ LẬP THEO TAB_KEY)
+# HÀM HỖ TRỢ UPLOAD & ĐỌC TÀI LIỆU
 # ==========================================
 def render_upload_download_section(tab_key, tab_name):
-  # Đồng bộ Cloudinary riêng cho tab_key này
-  cloud_sync.sync_files_from_cloudinary(tab_key)
+  try:
+    cloud_sync.sync_files_from_cloudinary(tab_key)
+  except Exception:
+    pass
 
   st.markdown(f"#### 📂 Quản lý tài liệu: {tab_name}")
   st.markdown("##### 📤 Upload tài liệu lên hệ thống")
 
-  # Đảm bảo key của file_uploader hoàn toàn độc lập dựa vào tab_key
   uploaded_file = st.file_uploader(
       f"Chọn file từ máy tính cho {tab_name}:", key=f"up_{tab_key}"
   )
 
   if uploaded_file is not None:
-    # Tránh xử lý lặp lại nếu file đã được upload ở lượt chạy trước trong session này
     current_file_id = f"{uploaded_file.name}_{uploaded_file.size}"
     last_uploaded_id = st.session_state.get(f"last_up_{tab_key}", "")
 
@@ -204,7 +231,7 @@ def render_upload_download_section(tab_key, tab_name):
           )
           cloudinary.uploader.upload(
               uploaded_file,
-              folder=f"MPM20_AI_Storage/{tab_key}",  # Phân chia thư mục Cloudinary theo từng tab nếu cần
+              folder=f"MPM20_AI_Storage/{tab_key}",
               public_id=uploaded_file.name,
               resource_type=resource_type,
               overwrite=True,
@@ -226,17 +253,18 @@ def render_upload_download_section(tab_key, tab_name):
           ),
           "data": file_bytes,
           "type": uploaded_file.type,
+          "tab": tab_key,
       }
 
-      # Đảm bảo cấu trúc lưu trữ tồn tại
-      if tab_key not in st.session_state.uploaded_files_store:
-        st.session_state.uploaded_files_store[tab_key] = []
+      if "uploaded_files_list" not in st.session_state:
+        st.session_state.uploaded_files_list = []
 
-      store = st.session_state.uploaded_files_store[tab_key]
-
-      # Thêm vào kho của riêng tab_key này
-      if not any(f["name"] == uploaded_file.name for f in store):
-        store.append(file_info)
+      exists = any(
+          f["name"] == uploaded_file.name and f.get("tab") == tab_key
+          for f in st.session_state.uploaded_files_list
+      )
+      if not exists:
+        st.session_state.uploaded_files_list.append(file_info)
         st.success(f"✅ Đã lưu file **{uploaded_file.name}** vào tab {tab_name}!")
 
       st.session_state[f"last_up_{tab_key}"] = current_file_id
@@ -246,8 +274,14 @@ def render_upload_download_section(tab_key, tab_name):
       f"##### 📚 Danh sách tài liệu đã lưu tại {tab_name} & Tùy chọn đọc/mở:"
   )
 
-  # Lấy dữ liệu ĐÚNG CỦA RIÊNG tab_key hiện tại
-  current_tab_store = st.session_state.uploaded_files_store.get(tab_key, [])
+  if "uploaded_files_list" in st.session_state:
+    current_tab_store = [
+        f
+        for f in st.session_state.uploaded_files_list
+        if f.get("tab") == tab_key
+    ]
+  else:
+    current_tab_store = []
 
   if current_tab_store:
     for idx, f in enumerate(current_tab_store):
@@ -374,11 +408,14 @@ with main_tab1:
     with st.form("chat_form", clear_on_submit=True):
       chat_input = st.text_input("Nhập nội dung trao đổi...")
       if st.form_submit_button("Gửi tin nhắn") and chat_input.strip():
-        st.session_state.discussions.append({
+        new_msg = {
             "user": user_email,
             "content": chat_input.strip(),
             "time": datetime.now().strftime("%H:%M:%S - %d/%m/%Y"),
-        })
+        }
+        st.session_state.discussions.append(new_msg)
+        # Lưu tự động lên Cloudinary ngay khi gửi tin nhắn mới
+        save_discussions_to_cloud()
         st.rerun()
 
   with sub_tab4:
